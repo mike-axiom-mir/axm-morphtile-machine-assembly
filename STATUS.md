@@ -16,4 +16,3 @@ Deterministic union, input non-mutation, and conflict tests.
 No runtime MorphTile validation, kit hashing, provenance merge, or visual proof.
 
 No claim of autonomous creation, production readiness, canon, or visual quality is made.
-

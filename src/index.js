@@ -2,12 +2,16 @@
 
 const { createHash } = require("node:crypto");
 const { assertRequest, clone, result } = require("./envelope");
-const MACHINE = { id: "axm.morphtile.machine.assembly", version: "0.3.0" };
+const MACHINE = { id: "axm.morphtile.machine.assembly", version: "0.4.0" };
 const SUPPORTED_SCHEMAS = new Set([
   "morphtile.tile-spec/v0.4",
   "morphtile.facet-candidate/v0.4",
-  "morphtile.capability-candidate/v0.4"
+  "morphtile.capability-candidate/v0.4",
+  "morphtile.view-operation/v0.4"
 ]);
+const TILE_ID = /^[A-Za-z0-9_-]+$/;
+const VIEW_CANDIDATE_KEYS = new Set(["schema", "operation"]);
+const VIEW_OPERATION_KEYS = new Set(["op", "id", "view"]);
 
 function canonical(value) {
   if (value === null || value === undefined || typeof value !== "object") return JSON.stringify(value === undefined ? null : value);
@@ -82,6 +86,99 @@ function inspectInputEnvelope(input, inputIndex, holds) {
   return true;
 }
 
+function addAssemblyId(seen, value, source, holds) {
+  if (value === undefined) return;
+  if (typeof value !== "string" || !value || !TILE_ID.test(value)) {
+    holds.push({ code: "HOLD_ASSEMBLY_ID_INVALID", source, value: clone(value) });
+    return;
+  }
+  seen.push({ value, source });
+}
+
+function resolveAssemblyId(request, inputs, holds) {
+  const seen = [];
+  const intent = request.intent || {};
+  addAssemblyId(seen, intent.id, "request.intent.id", holds);
+
+  inputs.forEach((input, index) => {
+    const candidate = candidateOf(input);
+    if (candidate && candidate.schema === "morphtile.tile-spec/v0.4" && hasOwn(candidate, "id")) {
+      addAssemblyId(seen, candidate.id, "input[" + index + "].candidate.id", holds);
+    }
+  });
+
+  const values = [...new Set(seen.map((item) => item.value))];
+  if (values.length > 1) {
+    holds.push({
+      code: "HOLD_ASSEMBLY_ID_CONFLICT",
+      identities: seen.map((item) => ({ source: item.source, value: item.value }))
+    });
+    return null;
+  }
+  return values[0] || null;
+}
+
+function foldViewOperation(assembled, candidate, inputIndex, conflicts, holds) {
+  const candidateUnknown = Object.keys(candidate).filter((key) => !VIEW_CANDIDATE_KEYS.has(key)).sort();
+  if (candidateUnknown.length) {
+    holds.push({
+      code: "HOLD_VIEW_OPERATION_SHAPE_INVALID",
+      input: inputIndex,
+      detail: "view-operation candidate contains unsupported field(s)",
+      fields: candidateUnknown
+    });
+    return;
+  }
+
+  const operation = candidate.operation;
+  if (!operation || typeof operation !== "object" || Array.isArray(operation)) {
+    holds.push({ code: "HOLD_VIEW_OPERATION_SHAPE_INVALID", input: inputIndex, detail: "operation must be an object" });
+    return;
+  }
+  const operationUnknown = Object.keys(operation).filter((key) => !VIEW_OPERATION_KEYS.has(key)).sort();
+  if (operationUnknown.length) {
+    holds.push({
+      code: "HOLD_VIEW_OPERATION_SHAPE_INVALID",
+      input: inputIndex,
+      detail: "view.set contains unsupported field(s)",
+      fields: operationUnknown
+    });
+    return;
+  }
+  if (operation.op !== "view.set") {
+    holds.push({ code: "HOLD_VIEW_OPERATION_SHAPE_INVALID", input: inputIndex, detail: "operation.op must be view.set" });
+    return;
+  }
+  if (typeof operation.id !== "string" || !TILE_ID.test(operation.id)) {
+    holds.push({ code: "HOLD_VIEW_OPERATION_TARGET_INVALID", input: inputIndex, target: clone(operation.id) });
+    return;
+  }
+  if (!operation.view || typeof operation.view !== "object" || Array.isArray(operation.view)) {
+    holds.push({ code: "HOLD_VIEW_OPERATION_SHAPE_INVALID", input: inputIndex, detail: "operation.view must be an object" });
+    return;
+  }
+  if (!assembled.id) {
+    holds.push({
+      code: "HOLD_VIEW_OPERATION_TARGET_UNBOUND",
+      input: inputIndex,
+      target: operation.id,
+      detail: "Assembly requires an explicit tile identity before folding an operation into new matter."
+    });
+    return;
+  }
+  if (operation.id !== assembled.id) {
+    holds.push({
+      code: "HOLD_VIEW_OPERATION_TARGET_MISMATCH",
+      input: inputIndex,
+      target: operation.id,
+      assembled_id: assembled.id
+    });
+    return;
+  }
+
+  mergeObject(assembled, { view: operation.view }, "", conflicts);
+}
+
 function mergeCandidate(assembled, input, inputIndex, conflicts, holds, warnings, heldCandidates) {
   if (!inspectInputEnvelope(input, inputIndex, holds)) return;
 
@@ -92,12 +189,17 @@ function mergeCandidate(assembled, input, inputIndex, conflicts, holds, warnings
       code: "HOLD_UNASSEMBLABLE_CANDIDATE_SCHEMA",
       input: inputIndex,
       schema,
-      detail: "Assembly Machine only folds tile, facet, and capability candidates into a tile spec; operation candidates remain explicit until a proven assembly contract exists."
+      detail: "Assembly Machine only folds proven tile/facet/capability candidates and the exact stable view.set operation contract into a tile spec; other operation candidates remain explicit until proven."
     });
     heldCandidates.push({ input: inputIndex, schema, candidate: clone(candidate) });
     return;
   }
   if (!schema) warnings.push({ code: "LEGACY_SCHEMALESS_FRAGMENT", input: inputIndex });
+
+  if (schema === "morphtile.view-operation/v0.4") {
+    foldViewOperation(assembled, candidate, inputIndex, conflicts, holds);
+    return;
+  }
 
   mergeFormHints(assembled.form_hints, candidate.form_hints);
 
@@ -202,16 +304,18 @@ function run(request) {
   const inputs = request.inputs || [];
   if (!inputs.length) return result(request, MACHINE, "HOLD", { holds: [{ code: "HOLD_NO_CANDIDATES" }] });
 
+  const conflicts = [];
+  const holds = [];
+  const warnings = [];
+  const heldCandidates = [];
+  const assemblyId = resolveAssemblyId(request, inputs, holds);
   const assembled = {
     schema: "morphtile.tile-spec/v0.4",
     name: (request.intent || {}).name || "Assembled candidate",
     form_hints: [],
     facets: {}
   };
-  const conflicts = [];
-  const holds = [];
-  const warnings = [];
-  const heldCandidates = [];
+  if (assemblyId) assembled.id = assemblyId;
 
   inputs.forEach((input, index) => mergeCandidate(assembled, input, index, conflicts, holds, warnings, heldCandidates));
   const dependencies = collectDependencies(request, inputs, holds);
@@ -227,7 +331,7 @@ function run(request) {
       held_candidates: heldCandidates,
       warnings,
       holds,
-      evidence: [{ kind: "INPUTS", status: "PASS", check: "input envelopes, upstream HOLDs, and unsupported candidates remain inspectable and are not promoted into assembly output" }]
+      evidence: [{ kind: "INPUTS", status: "PASS", check: "input envelopes, upstream HOLDs, unsupported candidates, and addressed operation boundaries remain inspectable and are not promoted without proof" }]
     });
   }
 
@@ -240,11 +344,11 @@ function run(request) {
     closure_hash: hash,
     warnings,
     evidence: [
-      { kind: "ASSEMBLY", status: "PASS", check: "deterministic compatible candidate union without overwrite" },
+      { kind: "ASSEMBLY", status: "PASS", check: "deterministic compatible candidate union without overwrite; proven view.set is folded only when its target equals the explicit assembled tile identity" },
       { kind: "CLOSURE", status: "PASS", check: "request/input dependency and world-requirement closure plus source provenance are preserved without silent replacement" },
       { kind: "HASH", status: "PASS", check: "candidate + dependencies + world requirements are bound by canonical SHA-256; provenance/evidence are intentionally outside content identity" }
     ]
   });
 }
 
-module.exports = { MACHINE, canonical, sha256Canonical, closureHash, run };
+module.exports = { MACHINE, canonical, sha256Canonical, closureHash, resolveAssemblyId, run };

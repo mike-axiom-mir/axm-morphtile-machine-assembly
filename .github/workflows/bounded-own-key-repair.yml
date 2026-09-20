@@ -1,0 +1,56 @@
+name: bounded-own-key-repair
+
+on:
+  push:
+    branches: [assembly-own-key-world-closure]
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    if: ${{ !contains(github.event.head_commit.message, '[assembly-own-key-repair]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: assembly-own-key-world-closure
+      - name: Apply bounded named-closure repair
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('src/index.js')
+          text = path.read_text()
+          old = '''function mergeNamed(target, source, kind, sourceLabel, sources, holds) {
+            for (const name of Object.keys(source || {}).sort()) {
+              if (!(name in target)) {
+                target[name] = clone(source[name]);
+                sources.set(name, sourceLabel);
+                continue;
+              }
+          '''
+          new = '''function mergeNamed(target, source, kind, sourceLabel, sources, holds) {
+            for (const name of Object.keys(source || {}).sort()) {
+              if (!hasOwn(target, name)) {
+                Object.defineProperty(target, name, {
+                  value: clone(source[name]),
+                  enumerable: true,
+                  configurable: true,
+                  writable: true
+                });
+                sources.set(name, sourceLabel);
+                continue;
+              }
+          '''
+          if old not in text:
+              raise SystemExit('expected mergeNamed source not found; refusing broad rewrite')
+          path.write_text(text.replace(old, new, 1))
+          PY
+      - name: Commit bounded repair
+        run: |
+          git config user.name "mike-axiom-mir"
+          git config user.email "miketobi90@gmail.com"
+          git add src/index.js
+          git diff --cached --exit-code && exit 1 || true
+          git commit -m "fix: preserve named closure own-key identity [assembly-own-key-repair]"
+          git push origin HEAD:assembly-own-key-world-closure

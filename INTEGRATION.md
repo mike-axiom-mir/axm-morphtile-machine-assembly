@@ -1,18 +1,27 @@
 # MorphTile integration
 
-Runtime-tested contract target remains:
+Current exact runtime target:
 
 - repository: mike-axiom-mir/axm-morphtile
-- commit: `13d83a2b2c0d12644442d3d9e45bcbe0af19876a`
+- commit: `ef2b3c6986aa1a333247feffc43a8443f17239d0`
 - format: v0.4
 - provisional envelope: v0.1
 
 The adapter emits candidate data only. The receiving caller must validate it against the applicable MorphTile runtime, propose it through the project's normal clone/plan/commit path, inspect conflicts and HOLDs, commit only with applicable authority, preserve the receipt, and retain rollback.
 
-Assembly v0.2 preserves `world_requirements` sidecars for words and definitions. Current MorphTile main was source-inspected and already represents those as explicit world-level units (`word.define`, `def.put`) with independent diff/merge keys. This pass does **not** claim runtime proof for applying the sidecars against current main.
+Assembly preserves dependency closure, `world_requirements` words/definitions, source provenance and upstream warnings. Successful assembly content is bound by a creation-side `closure_hash` over candidate + dependencies + world requirements using sorted-key canonical JSON and SHA-256. That receipt is deliberately distinct from MorphTile's portable-kit `expect.sha256`, which is computed by MorphTile over the materialized tile + defs + words.
 
-Assembly v0.2.1 adds a machine-side `closure_hash` over the candidate + dependencies + world requirements using sorted-key canonical JSON and SHA-256. This is a tamper/drift receipt for the creation-side closure only. It is deliberately not labeled or shaped as MorphTile's `morphtile-kit.expect.sha256`, because a tile spec is not yet the canonical tile object produced/imported by MorphTile.
+Assembly can materialize a successful closure-preserving candidate through an explicitly supplied MorphTile runtime into a real `morphtile-kit`, validate the tile, compute MorphTile's own kit hash and require fresh-world `importKit` to return `READY`. Arbitrary dependency records remain a HOLD because the current portable kit contract has no representation for them; conversion never authorizes dropping closure.
 
-The current Interface Machine candidate PR can emit `morphtile.interface-operations/v0.4`. That is an operation bundle, not tile matter. Assembly HOLDS such explicit unsupported schemas instead of silently losing their operations. A future operation-aware assembly path requires its own grounded contract and tests.
+## Interface transport compatibility
 
-No compatibility is claimed with MorphTile commits other than the pinned runtime-tested target until their conformance tests are run.
+Merged Interface v0.4 remains pinned in CI at `260e45599c91cbcb0ec8a5a54153323e4e5d0c6a` and is exercised by the existing four-machine integration proof.
+
+Assembly v0.6 additionally targets the exact reviewed Interface v0.5 candidate head `5dd11a33ed15a86f995fc47333c3822d94f5ec68`. Interface v0.5 changes creation-side nested relative layout but retains the same addressed MorphTile operation shapes:
+
+- `morphtile.view-operation/v0.5` contains one `view.set`;
+- `morphtile.interface-operations/v0.5` contains exactly one `view.set` plus one `presentation.set`.
+
+Assembly treats the nested `row` / `group` tree as ordinary authored MorphTile `view` content. It does not flatten, reinterpret or take ownership of Interface layout semantics. The existing safety boundaries remain unchanged: explicit matching tile identity, caller-owned `ui_panel` eligibility, exact operation shape, presentation whitelist and conflict-safe merging. Unknown fields, extra operations and future schema versions HOLD.
+
+The v0.5 integration proof uses the exact Interface candidate head rather than treating an open PR as merged CANON. Compatibility beyond the explicitly pinned versions is not inferred.

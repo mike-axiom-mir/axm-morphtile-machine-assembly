@@ -3,20 +3,33 @@
 const { createHash } = require("node:crypto");
 const { assertRequest, clone, result } = require("./envelope");
 const { parseInterfaceOperations } = require("./interface-operations");
-const MACHINE = { id: "axm.morphtile.machine.assembly", version: "0.5.1" };
+
+const MACHINE = { id: "axm.morphtile.machine.assembly", version: "0.6.0" };
 const SUPPORTED_SCHEMAS = new Set([
   "morphtile.tile-spec/v0.4",
   "morphtile.facet-candidate/v0.4",
   "morphtile.capability-candidate/v0.4",
   "morphtile.view-operation/v0.4",
-  "morphtile.interface-operations/v0.4"
+  "morphtile.view-operation/v0.5",
+  "morphtile.interface-operations/v0.4",
+  "morphtile.interface-operations/v0.5"
+]);
+const VIEW_OPERATION_SCHEMAS = new Set([
+  "morphtile.view-operation/v0.4",
+  "morphtile.view-operation/v0.5"
+]);
+const INTERFACE_OPERATION_SCHEMAS = new Set([
+  "morphtile.interface-operations/v0.4",
+  "morphtile.interface-operations/v0.5"
 ]);
 const TILE_ID = /^[A-Za-z0-9_-]+$/;
 const VIEW_CANDIDATE_KEYS = new Set(["schema", "operation"]);
 const VIEW_OPERATION_KEYS = new Set(["op", "id", "view"]);
 
 function canonical(value) {
-  if (value === null || value === undefined || typeof value !== "object") return JSON.stringify(value === undefined ? null : value);
+  if (value === null || value === undefined || typeof value !== "object") {
+    return JSON.stringify(value === undefined ? null : value);
+  }
   if (Array.isArray(value)) return "[" + value.map(canonical).join(",") + "]";
   const keys = Object.keys(value).filter((key) => value[key] !== undefined).sort();
   return "{" + keys.map((key) => JSON.stringify(key) + ":" + canonical(value[key])).join(",") + "}";
@@ -156,6 +169,7 @@ function foldViewOperation(assembled, candidate, inputIndex, conflicts, holds, o
     holds.push({ code: "HOLD_VIEW_OPERATION_SHAPE_INVALID", input: inputIndex, detail: "operation must be an object" });
     return false;
   }
+
   const operationUnknown = Object.keys(operation).filter((key) => !VIEW_OPERATION_KEYS.has(key)).sort();
   if (operationUnknown.length) {
     holds.push({
@@ -223,23 +237,23 @@ function mergeCandidate(assembled, input, inputIndex, conflicts, holds, warnings
       code: "HOLD_UNASSEMBLABLE_CANDIDATE_SCHEMA",
       input: inputIndex,
       schema,
-      detail: "Assembly Machine only folds proven tile/facet/capability candidates plus the exact stable Interface view.set and view.set+presentation.set contracts into a tile spec; other operation candidates remain explicit until proven."
+      detail: "Assembly Machine only folds proven tile/facet/capability candidates plus the exact proven Interface v0.4/v0.5 view.set and view.set+presentation.set contracts into a tile spec; other operation candidates remain explicit until proven."
     });
     heldCandidates.push({ input: inputIndex, schema, candidate: clone(candidate) });
     return false;
   }
   if (!schema) warnings.push({ code: "LEGACY_SCHEMALESS_FRAGMENT", input: inputIndex });
 
-  if (schema === "morphtile.view-operation/v0.4") {
+  if (VIEW_OPERATION_SCHEMAS.has(schema)) {
     return foldViewOperation(assembled, candidate, inputIndex, conflicts, holds, owners);
   }
-  if (schema === "morphtile.interface-operations/v0.4") {
+  if (INTERFACE_OPERATION_SCHEMAS.has(schema)) {
     return foldInterfaceOperations(assembled, candidate, inputIndex, conflicts, holds, owners);
   }
 
   mergeFormHints(assembled.form_hints, candidate.form_hints);
 
-  if (schema === "morphtile.facet-candidate/v0.4" || (candidate.facet && Object.prototype.hasOwnProperty.call(candidate, "value"))) {
+  if (schema === "morphtile.facet-candidate/v0.4" || (candidate.facet && hasOwn(candidate, "value"))) {
     mergeObject(assembled.facets, { [candidate.facet]: candidate.value }, "facets", conflicts, owners, "input[" + inputIndex + "]");
     return false;
   }
@@ -285,7 +299,9 @@ function collectDependencies(request, inputs, holds) {
     for (const dependency of (input && input.dependencies) || []) add(dependency, "input[" + index + "]");
   });
 
-  return Array.from(seen.entries()).sort(([a], [b]) => a.localeCompare(b)).map(([, item]) => item.value);
+  return Array.from(seen.entries())
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([, item]) => item.value);
 }
 
 function mergeNamed(target, source, kind, sourceLabel, sources, holds) {
@@ -313,6 +329,7 @@ function collectWorldRequirements(request, inputs, holds) {
   const wordSources = new Map();
   const definitionSources = new Map();
   const requestRequirements = request.world_requirements || {};
+
   mergeNamed(words, requestRequirements.words || {}, "word", "request", wordSources, holds);
   mergeNamed(definitions, requestRequirements.definitions || requestRequirements.defs || {}, "definition", "request", definitionSources, holds);
 
@@ -321,6 +338,7 @@ function collectWorldRequirements(request, inputs, holds) {
     mergeNamed(words, req.words || {}, "word", "input[" + index + "]", wordSources, holds);
     mergeNamed(definitions, req.definitions || req.defs || {}, "definition", "input[" + index + "]", definitionSources, holds);
   });
+
   const out = {};
   if (Object.keys(words).length) out.words = words;
   if (Object.keys(definitions).length) out.definitions = definitions;
@@ -392,7 +410,9 @@ function collectSourceProvenance(inputs) {
 function run(request) {
   assertRequest(request);
   const inputs = request.inputs || [];
-  if (!inputs.length) return result(request, MACHINE, "HOLD", { holds: [{ code: "HOLD_NO_CANDIDATES" }] });
+  if (!inputs.length) {
+    return result(request, MACHINE, "HOLD", { holds: [{ code: "HOLD_NO_CANDIDATES" }] });
+  }
 
   const conflicts = [];
   const conflictOwners = new Map();
@@ -410,8 +430,11 @@ function run(request) {
 
   let foldedInterfaceMatter = false;
   inputs.forEach((input, index) => {
-    if (mergeCandidate(assembled, input, index, conflicts, holds, warnings, heldCandidates, conflictOwners)) foldedInterfaceMatter = true;
+    if (mergeCandidate(assembled, input, index, conflicts, holds, warnings, heldCandidates, conflictOwners)) {
+      foldedInterfaceMatter = true;
+    }
   });
+
   const dependencies = collectDependencies(request, inputs, holds);
   const worldRequirements = collectWorldRequirements(request, inputs, holds);
   const definitionClosure = inspectDefinitionClosure(assembled, worldRequirements);
@@ -425,6 +448,7 @@ function run(request) {
       detail: "Assembled MorphTile matter references definitions that are absent from the declared world-requirement closure; Assembly will not claim a complete candidate until those definitions are supplied."
     });
   }
+
   if (foldedInterfaceMatter && !assembled.form_hints.includes("ui_panel")) {
     holds.push({
       code: "HOLD_VIEW_TARGET_FORM_MISSING",
@@ -432,6 +456,7 @@ function run(request) {
       detail: "The proven Interface contracts require the assembled target to declare ui_panel; Assembly will not invent that form hint."
     });
   }
+
   if (conflicts.length) {
     holds.push({
       code: "HOLD_ASSEMBLY_CONFLICT",
@@ -439,6 +464,7 @@ function run(request) {
       conflicts: clone(conflicts)
     });
   }
+
   if (holds.length) {
     return result(request, MACHINE, "HOLD", {
       dependencies,
@@ -448,7 +474,11 @@ function run(request) {
       held_candidates: heldCandidates,
       warnings,
       holds,
-      evidence: [{ kind: "INPUTS", status: "PASS", check: "input envelopes, upstream HOLDs/warnings, unsupported candidates, addressed operation boundaries, definition closure, and all conflicting variants/sources remain inspectable and are not promoted without proof" }]
+      evidence: [{
+        kind: "INPUTS",
+        status: "PASS",
+        check: "input envelopes, upstream HOLDs/warnings, unsupported candidates, addressed operation boundaries, definition closure, and all conflicting variants/sources remain inspectable and are not promoted without proof"
+      }]
     });
   }
 
@@ -462,11 +492,31 @@ function run(request) {
     closure_hash: hash,
     warnings,
     evidence: [
-      { kind: "ASSEMBLY", status: "PASS", check: "deterministic compatible candidate union without overwrite; proven Interface view and presentation operations are folded only when target identity matches and ui_panel eligibility already exists" },
-      { kind: "CLOSURE", status: "PASS", check: "request/input dependency and world-requirement closure plus source provenance and upstream warnings are preserved; direct and transitive MorphTile definition references are present before completion is claimed" },
-      { kind: "HASH", status: "PASS", check: "candidate + dependencies + world requirements are bound by canonical SHA-256; derived requirement indexes, provenance/evidence/warnings are intentionally outside content identity" }
+      {
+        kind: "ASSEMBLY",
+        status: "PASS",
+        check: "deterministic compatible candidate union without overwrite; proven Interface v0.4/v0.5 view and presentation operations are folded only when target identity matches and ui_panel eligibility already exists"
+      },
+      {
+        kind: "CLOSURE",
+        status: "PASS",
+        check: "request/input dependency and world-requirement closure plus source provenance and upstream warnings are preserved; direct and transitive MorphTile definition references are present before completion is claimed"
+      },
+      {
+        kind: "HASH",
+        status: "PASS",
+        check: "candidate + dependencies + world requirements are bound by canonical SHA-256; derived requirement indexes, provenance/evidence/warnings are intentionally outside content identity"
+      }
     ]
   });
 }
 
-module.exports = { MACHINE, canonical, sha256Canonical, closureHash, inspectDefinitionClosure, resolveAssemblyId, run };
+module.exports = {
+  MACHINE,
+  canonical,
+  sha256Canonical,
+  closureHash,
+  inspectDefinitionClosure,
+  resolveAssemblyId,
+  run
+};

@@ -96,7 +96,7 @@ test("future unsupported operation bundles remain explicit inside HOLD output", 
     status: "CANDIDATE",
     machine: { id: "axm.morphtile.machine.interface", version: "future" },
     candidate: {
-      schema: "morphtile.interface-operations/v0.5",
+      schema: "morphtile.interface-operations/v0.6",
       operations: [
         { op: "view.set", id: "mt_counter", view: { title: "Counter", body: [{ value: "count" }] } },
         { op: "presentation.set", id: "mt_counter", presentation: { mode: "world" } }
@@ -108,7 +108,7 @@ test("future unsupported operation bundles remain explicit inside HOLD output", 
   assert.equal(out.status, "HOLD");
   const hold = out.holds.find((item) => item.code === "HOLD_UNASSEMBLABLE_CANDIDATE_SCHEMA");
   assert.equal(hold.input, 2);
-  assert.equal(hold.schema, "morphtile.interface-operations/v0.5");
+  assert.equal(hold.schema, "morphtile.interface-operations/v0.6");
   assert.equal(out.held_candidates.length, 1);
   assert.deepEqual(out.held_candidates[0].candidate, request.inputs[2].candidate);
 });

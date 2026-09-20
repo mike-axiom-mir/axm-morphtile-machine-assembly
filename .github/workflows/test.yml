@@ -34,6 +34,11 @@ jobs:
           path: .siblings/interface
       - uses: actions/checkout@v4
         with:
+          repository: mike-axiom-mir/axm-morphtile-machine-interface
+          ref: 5dd11a33ed15a86f995fc47333c3822d94f5ec68
+          path: .candidates/interface-v05
+      - uses: actions/checkout@v4
+        with:
           repository: mike-axiom-mir/axm-morphtile
           ref: ef2b3c6986aa1a333247feffc43a8443f17239d0
           path: .runtime/morphtile
@@ -46,5 +51,7 @@ jobs:
           SURFACE_MACHINE_PATH: ${{ github.workspace }}/.siblings/surface/src
           CAPABILITY_MACHINE_PATH: ${{ github.workspace }}/.siblings/capability/src
           INTERFACE_MACHINE_PATH: ${{ github.workspace }}/.siblings/interface/src
+          INTERFACE_V05_MACHINE_PATH: ${{ github.workspace }}/.candidates/interface-v05/src
           MORPHTILE_CORE_PATH: ${{ github.workspace }}/.runtime/morphtile/core/morphtile.js
           MORPHTILE_COMMIT: ef2b3c6986aa1a333247feffc43a8443f17239d0
+          INTERFACE_V05_COMMIT: 5dd11a33ed15a86f995fc47333c3822d94f5ec68

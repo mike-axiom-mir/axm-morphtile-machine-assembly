@@ -17,12 +17,10 @@ jobs:
           repository: mike-axiom-mir/axm-morphtile-machine-form
           ref: e0da57037a2efd736ee465ead2c1d73d4fbf24cc
           path: .siblings/form
-      # Surface current main is pinned so ordinary checker transport stays regression-tested.
-      # Its separately reported axis-gradient exact-endpoint HOLD is not cleared by this Assembly suite.
       - uses: actions/checkout@v4
         with:
           repository: mike-axiom-mir/axm-morphtile-machine-surface
-          ref: f7824cf60d0036ca2a31a93866aceba57322aacd
+          ref: 20821976e042a42d6cab591bcb9b6a011bad6e47
           path: .siblings/surface
       - uses: actions/checkout@v4
         with:
@@ -34,6 +32,12 @@ jobs:
           repository: mike-axiom-mir/axm-morphtile-machine-interface
           ref: 77e833790358514c98e27cfcde6f5ab24c235264
           path: .siblings/interface
+      # Candidate-only compatibility lane: this checkout is evidence, not integrated Interface CANON.
+      - uses: actions/checkout@v4
+        with:
+          repository: mike-axiom-mir/axm-morphtile-machine-interface
+          ref: 92cee3a9cbe823bcd2ca6a587f8b116c13e0ba99
+          path: .candidates/interface-nested-paths
       - uses: actions/checkout@v4
         with:
           repository: mike-axiom-mir/axm-morphtile
@@ -49,6 +53,8 @@ jobs:
           CAPABILITY_MACHINE_PATH: ${{ github.workspace }}/.siblings/capability/src
           INTERFACE_MACHINE_PATH: ${{ github.workspace }}/.siblings/interface/src
           INTERFACE_V05_MACHINE_PATH: ${{ github.workspace }}/.siblings/interface/src
+          INTERFACE_NESTED_MACHINE_PATH: ${{ github.workspace }}/.candidates/interface-nested-paths/src
           MORPHTILE_CORE_PATH: ${{ github.workspace }}/.runtime/morphtile/core/morphtile.js
           MORPHTILE_COMMIT: ef2b3c6986aa1a333247feffc43a8443f17239d0
           INTERFACE_V05_COMMIT: 77e833790358514c98e27cfcde6f5ab24c235264
+          INTERFACE_NESTED_COMMIT: 92cee3a9cbe823bcd2ca6a587f8b116c13e0ba99

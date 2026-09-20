@@ -2,9 +2,9 @@
 
 const { createHash } = require("node:crypto");
 const { assertRequest, clone, result } = require("./envelope");
-const { parseInterfaceOperations } = require("./interface-operations");
+const { isTilePath, pathLeaf, parseInterfaceOperations } = require("./interface-operations");
 
-const MACHINE = { id: "axm.morphtile.machine.assembly", version: "0.6.1" };
+const MACHINE = { id: "axm.morphtile.machine.assembly", version: "0.6.2" };
 const SUPPORTED_SCHEMAS = new Set([
   "morphtile.tile-spec/v0.4",
   "morphtile.facet-candidate/v0.4",
@@ -152,7 +152,31 @@ function resolveAssemblyId(request, inputs, holds) {
   return values[0] || null;
 }
 
-function foldViewOperation(assembled, candidate, inputIndex, conflicts, holds, owners) {
+function resolveAssemblyTargetPath(request, assemblyId, holds) {
+  const intent = request.intent || {};
+  if (!hasOwn(intent, "tile_path")) return null;
+  const value = intent.tile_path;
+  if (!isTilePath(value)) {
+    holds.push({
+      code: "HOLD_ASSEMBLY_TARGET_PATH_INVALID",
+      source: "request.intent.tile_path",
+      value: clone(value),
+      detail: "Nested Assembly target paths must use one or more [A-Za-z0-9_-]+ segments separated by single '/'."
+    });
+    return null;
+  }
+  if (assemblyId && pathLeaf(value) !== assemblyId) {
+    holds.push({
+      code: "HOLD_ASSEMBLY_TARGET_PATH_ID_MISMATCH",
+      assembled_id: assemblyId,
+      assembled_path: value,
+      detail: "The explicit Assembly tile path must end in the same local tile id as the assembled tile candidate."
+    });
+  }
+  return value;
+}
+
+function foldViewOperation(assembled, assembledPath, candidate, inputIndex, conflicts, holds, owners) {
   const candidateUnknown = Object.keys(candidate).filter((key) => !VIEW_CANDIDATE_KEYS.has(key)).sort();
   if (candidateUnknown.length) {
     holds.push({
@@ -184,7 +208,7 @@ function foldViewOperation(assembled, candidate, inputIndex, conflicts, holds, o
     holds.push({ code: "HOLD_VIEW_OPERATION_SHAPE_INVALID", input: inputIndex, detail: "operation.op must be view.set" });
     return false;
   }
-  if (typeof operation.id !== "string" || !TILE_ID.test(operation.id)) {
+  if (!isTilePath(operation.id)) {
     holds.push({ code: "HOLD_VIEW_OPERATION_TARGET_INVALID", input: inputIndex, target: clone(operation.id) });
     return false;
   }
@@ -197,16 +221,28 @@ function foldViewOperation(assembled, candidate, inputIndex, conflicts, holds, o
       code: "HOLD_VIEW_OPERATION_TARGET_UNBOUND",
       input: inputIndex,
       target: operation.id,
-      detail: "Assembly requires an explicit tile identity before folding an operation into new matter."
+      detail: "Assembly requires an explicit local tile identity before folding an operation into new matter."
     });
     return false;
   }
-  if (operation.id !== assembled.id) {
+  if (operation.id.includes("/") && !assembledPath) {
+    holds.push({
+      code: "HOLD_VIEW_OPERATION_TARGET_PATH_UNBOUND",
+      input: inputIndex,
+      target: operation.id,
+      assembled_id: assembled.id,
+      detail: "A nested Interface target requires request.intent.tile_path so Assembly does not infer parent context from a matching leaf id."
+    });
+    return false;
+  }
+  const expectedTarget = assembledPath || assembled.id;
+  if (operation.id !== expectedTarget) {
     holds.push({
       code: "HOLD_VIEW_OPERATION_TARGET_MISMATCH",
       input: inputIndex,
       target: operation.id,
-      assembled_id: assembled.id
+      assembled_id: assembled.id,
+      assembled_path: assembledPath || null
     });
     return false;
   }
@@ -215,8 +251,8 @@ function foldViewOperation(assembled, candidate, inputIndex, conflicts, holds, o
   return true;
 }
 
-function foldInterfaceOperations(assembled, candidate, inputIndex, conflicts, holds, owners) {
-  const parsed = parseInterfaceOperations(assembled.id, candidate, inputIndex);
+function foldInterfaceOperations(assembled, assembledPath, candidate, inputIndex, conflicts, holds, owners) {
+  const parsed = parseInterfaceOperations(assembled.id, assembledPath, candidate, inputIndex);
   if (!parsed.ok) {
     holds.push(...parsed.holds);
     return false;
@@ -226,7 +262,7 @@ function foldInterfaceOperations(assembled, candidate, inputIndex, conflicts, ho
   return true;
 }
 
-function mergeCandidate(assembled, input, inputIndex, conflicts, holds, warnings, heldCandidates, owners) {
+function mergeCandidate(assembled, assembledPath, input, inputIndex, conflicts, holds, warnings, heldCandidates, owners) {
   preserveInputWarnings(input, inputIndex, warnings);
   if (!inspectInputEnvelope(input, inputIndex, holds)) return false;
 
@@ -245,10 +281,10 @@ function mergeCandidate(assembled, input, inputIndex, conflicts, holds, warnings
   if (!schema) warnings.push({ code: "LEGACY_SCHEMALESS_FRAGMENT", input: inputIndex });
 
   if (VIEW_OPERATION_SCHEMAS.has(schema)) {
-    return foldViewOperation(assembled, candidate, inputIndex, conflicts, holds, owners);
+    return foldViewOperation(assembled, assembledPath, candidate, inputIndex, conflicts, holds, owners);
   }
   if (INTERFACE_OPERATION_SCHEMAS.has(schema)) {
-    return foldInterfaceOperations(assembled, candidate, inputIndex, conflicts, holds, owners);
+    return foldInterfaceOperations(assembled, assembledPath, candidate, inputIndex, conflicts, holds, owners);
   }
 
   mergeFormHints(assembled.form_hints, candidate.form_hints);
@@ -441,6 +477,8 @@ function run(request) {
   const warnings = [];
   const heldCandidates = [];
   const assemblyId = resolveAssemblyId(request, inputs, holds);
+  const assemblyPath = resolveAssemblyTargetPath(request, assemblyId, holds);
+  const targetBinding = assemblyId ? { id: assemblyId, path: assemblyPath || assemblyId } : null;
   const assembled = {
     schema: "morphtile.tile-spec/v0.4",
     name: (request.intent || {}).name || "Assembled candidate",
@@ -451,7 +489,7 @@ function run(request) {
 
   let foldedInterfaceMatter = false;
   inputs.forEach((input, index) => {
-    if (mergeCandidate(assembled, input, index, conflicts, holds, warnings, heldCandidates, conflictOwners)) {
+    if (mergeCandidate(assembled, assemblyPath, input, index, conflicts, holds, warnings, heldCandidates, conflictOwners)) {
       foldedInterfaceMatter = true;
     }
   });
@@ -489,6 +527,7 @@ function run(request) {
 
   if (holds.length) {
     return result(request, MACHINE, "HOLD", {
+      target_binding: targetBinding,
       dependencies,
       world_requirements: worldRequirements,
       required_definitions: definitionClosure.required,
@@ -499,13 +538,14 @@ function run(request) {
       evidence: [{
         kind: "INPUTS",
         status: "PASS",
-        check: "input envelopes, upstream HOLDs/warnings, unsupported candidates, addressed operation boundaries, named world-requirement identities, definition closure, and all conflicting variants/sources remain inspectable and are not promoted without proof"
+        check: "input envelopes, upstream HOLDs/warnings, unsupported candidates, addressed Interface path bindings, named world-requirement identities, definition closure, and all conflicting variants/sources remain inspectable and are not promoted without proof"
       }]
     });
   }
 
   const hash = closureHash(assembled, dependencies, worldRequirements);
   return result(request, MACHINE, "CANDIDATE", {
+    target_binding: targetBinding,
     candidate: assembled,
     dependencies,
     world_requirements: worldRequirements,
@@ -517,7 +557,7 @@ function run(request) {
       {
         kind: "ASSEMBLY",
         status: "PASS",
-        check: "deterministic compatible candidate union without overwrite; proven Interface v0.4/v0.5 view and presentation operations are folded only when target identity matches and ui_panel eligibility already exists"
+        check: "deterministic compatible candidate union without overwrite; proven Interface v0.4/v0.5 view and presentation operations are folded only when exact local/nested target binding matches and ui_panel eligibility already exists"
       },
       {
         kind: "CLOSURE",
@@ -527,7 +567,7 @@ function run(request) {
       {
         kind: "HASH",
         status: "PASS",
-        check: "candidate + dependencies + world requirements are bound by canonical SHA-256; derived requirement indexes, provenance/evidence/warnings are intentionally outside content identity"
+        check: "candidate + dependencies + world requirements are bound by canonical SHA-256; address binding, derived requirement indexes, provenance/evidence/warnings are intentionally outside portable content identity"
       }
     ]
   });
@@ -541,5 +581,6 @@ module.exports = {
   inspectWorldRequirementIdentities,
   inspectDefinitionClosure,
   resolveAssemblyId,
+  resolveAssemblyTargetPath,
   run
 };

@@ -24,6 +24,7 @@ function result(request, machine, status, fields = {}) {
     machine: clone(machine),
     status,
     candidate: fields.candidate === undefined ? null : clone(fields.candidate),
+    target_binding: fields.target_binding === undefined ? null : clone(fields.target_binding),
     dependencies: clone(fields.dependencies || []),
     world_requirements: fields.world_requirements === undefined ? null : clone(fields.world_requirements),
     required_definitions: clone(fields.required_definitions || []),

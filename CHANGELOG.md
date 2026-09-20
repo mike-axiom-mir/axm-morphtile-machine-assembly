@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.6.2 — 2026-09-20
+
+- Added the bounded MorphTile full-path grammar for proven Interface v0.4/v0.5 operation targets while keeping assembled tile `id` as a one-segment local identity.
+- Nested Interface targets now require explicit `request.intent.tile_path`; Assembly will not infer parent context merely because the operation path ends in the same local tile id.
+- Added `target_binding` result metadata so the exact local id + canonical path used during folding remains inspectable without pretending address context is part of portable tile content identity.
+- Rejects malformed target paths, malformed presentation anchors, local-id/path disagreement, and same-leaf/different-parent mismatches as explicit HOLDs.
+- Added exact candidate-head integration proof against Interface PR #7 (`92cee3a9cbe823bcd2ca6a587f8b116c13e0ba99`) and re-pinned merged Surface evidence to repaired main `20821976e042a42d6cab591bcb9b6a011bad6e47`.
+
 ## 0.6.1 — 2026-09-20
 
 - Added fail-closed identity checks for named MorphTile world requirements: an explicit word `name` must match its `words` map key and an explicit definition `id` must match its `definitions` map key.

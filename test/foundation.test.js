@@ -69,9 +69,11 @@ test("holds conflicting word or definition requirements instead of overwriting",
   assert.equal(out.holds.some((item) => item.code === "HOLD_WORD_CONFLICT" && item.identity === "pulse"), true);
 });
 
-test("does not silently discard sibling operation bundles", () => {
+test("does not silently accept malformed current Interface operation bundles", () => {
   const interfaceBundle = JSON.parse(JSON.stringify(request));
-  interfaceBundle.request_id = "interface-bundle";
+  interfaceBundle.request_id = "interface-bundle-malformed";
+  interfaceBundle.intent = { id: "mt_counter", name: "Counter" };
+  interfaceBundle.inputs[0].candidate.form_hints.push("ui_panel");
   interfaceBundle.inputs.push({
     machine: { id: "axm.morphtile.machine.interface", version: "0.2.0" },
     candidate: {
@@ -84,8 +86,9 @@ test("does not silently discard sibling operation bundles", () => {
   });
   const out = run(interfaceBundle);
   assert.equal(out.status, "HOLD");
-  const hold = out.holds.find((item) => item.code === "HOLD_UNASSEMBLABLE_CANDIDATE_SCHEMA");
-  assert.equal(hold.schema, "morphtile.interface-operations/v0.4");
+  const hold = out.holds.find((item) => item.code === "HOLD_INTERFACE_OPERATIONS_SHAPE_INVALID");
+  assert.equal(hold.input, 2);
+  assert.match(hold.detail, /unsupported interface operation/);
 });
 
 test("canonical comparison accepts semantically equal object key order", () => {

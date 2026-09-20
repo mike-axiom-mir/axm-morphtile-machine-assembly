@@ -22,6 +22,30 @@ function requestWithWord() {
   return request;
 }
 
+function requestWithInterfaceBundle() {
+  const request = JSON.parse(JSON.stringify(baseRequest));
+  request.request_id = "assembly-kit-interface-bundle";
+  request.intent = { id: "mt_kit_interface", name: "Kit interface proof" };
+  request.inputs[0].candidate.form_hints.push("ui_panel");
+  request.inputs.push({
+    envelope_version: "0.1",
+    request_id: "interface-kit-bundle",
+    machine: { id: "axm.morphtile.machine.interface", version: "0.2.0" },
+    status: "CANDIDATE",
+    candidate: {
+      schema: "morphtile.interface-operations/v0.4",
+      operations: [
+        { op: "view.set", id: "mt_kit_interface", view: { title: "Kit UI", body: [{ text: "portable" }] } },
+        { op: "presentation.set", id: "mt_kit_interface", presentation: { mode: "floating", preferred_size: [320, 200], user_adjustable: true } }
+      ]
+    },
+    warnings: [{ code: "TARGET_MUST_EXIST_AND_DECLARE_UI_PANEL" }],
+    evidence: [],
+    holds: []
+  });
+  return request;
+}
+
 test("kit materialization refuses to drop arbitrary dependency closure", () => {
   const request = JSON.parse(JSON.stringify(baseRequest));
   request.request_id = "assembly-kit-dependency-hold";
@@ -53,6 +77,24 @@ test("pinned MorphTile runtime accepts the generated complete kit with verified 
   assert.equal(imported.evidence, "verified_payload_sha256");
   assert.deepEqual(imported.ops.map((op) => op.op), ["word.define", "tile.add"]);
   assert.equal(out.runtime_contract.engine_version, MT.VERSION);
+});
+
+test("Interface view and presentation survive complete kit export and verified fresh-world import", { skip: !MT }, () => {
+  const assembled = run(requestWithInterfaceBundle());
+  assert.equal(assembled.status, "CANDIDATE", JSON.stringify(assembled.holds));
+  const out = materializeKit(assembled, MT, { name: "Portable interface kit" });
+  assert.equal(out.status, "CANDIDATE", JSON.stringify(out.holds));
+  assert.deepEqual(out.kit.tile.view, { title: "Kit UI", body: [{ text: "portable" }] });
+  assert.deepEqual(out.kit.tile.presentation, { mode: "floating", preferred_size: [320, 200], user_adjustable: true });
+  assert.equal(out.kit.expect.sha256, MT.hashOf({ tile: out.kit.tile, defs: out.kit.defs, words: out.kit.words }));
+
+  const receiver = MT.createWorld("Interface receiver");
+  const imported = MT.importKit(receiver, JSON.parse(JSON.stringify(out.kit)));
+  assert.equal(imported.status, "READY");
+  assert.equal(imported.evidence, "verified_payload_sha256");
+  const add = imported.ops.find((operation) => operation.op === "tile.add");
+  assert.deepEqual(add.tile.view, out.kit.tile.view);
+  assert.deepEqual(add.tile.presentation, out.kit.tile.presentation);
 });
 
 test("pinned runtime rejects semantic kit tampering after materialization", { skip: !MT }, () => {

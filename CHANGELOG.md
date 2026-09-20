@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.5.0 — 2026-09-20
+
+- Added fail-closed folding for the exact current Interface Machine `morphtile.interface-operations/v0.4` contract: one `view.set` plus one `presentation.set` targeting the same explicit tile.
+- Preserved the existing `ui_panel` eligibility boundary; Assembly still refuses to invent product intent merely to make Interface composition pass.
+- Rejects unknown candidate, operation, or presentation fields and rejects extra operation types instead of becoming an arbitrary operation composer.
+- Added conflict-safe presentation merging so existing different presentation matter HOLDs rather than being overwritten.
+- Retargeted exact cross-repository conformance to current integrated Form, Surface, Capability, Interface, and MorphTile revisions, including Capability authored `initial` state and Interface symbolic binding declarations.
+
 ## 0.2.1 — 2026-09-20
 
 - Added a canonical SHA-256 `closure_hash` for successful assembly candidates.

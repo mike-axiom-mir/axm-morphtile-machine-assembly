@@ -1,14 +1,14 @@
 # Status
 
 - Candidate version: 0.6.3
-- State: CANDIDATE — PRODUCER CI GREEN; INDEPENDENT VERIFICATION REQUIRED
+- State: CANDIDATE — PROXY SOURCE-INTEGRITY REPAIR OPEN; CURRENT-MAIN EVIDENCE RE-PROOF IN PROGRESS
 - Test command: `npm test`
-- Assembly base: `3941fba9254f42c9856a9fcc1598180b2696437f`
+- Assembly base: `1b81da5e3c885a904236cc643c910b83ad0d7bc6`
 - MorphTile runtime target: v0.4 at `429a344f7d9333bef01cf9de1c292c3af09abec2`
-- Form integrated evidence: `fd0f8fbee80fe68dc076aa793407e3f59ee5f286`
-- Surface integrated evidence: `1d5e13ec10245d7754d04612807fad095dc81500`
+- Form integrated evidence: `9f43f9e3ffbaf1687419d90e7e8e3185092e48f5`
+- Surface integrated evidence: `5184275314503333912cf30c97c203323a1ab7e1`
 - Capability integrated evidence: `edc07af182ee26ca1ceb64b5d5205591ec6aca9d`
-- Interface integrated evidence: `bc4b6196b0a0f8a6df39c71cdd8db22c1f787f83`
+- Interface integrated evidence: `0e47cd09d613c6c934cd7adbdb6c7a18eeaaf6ed`
 - Envelope: provisional v0.1
 - Visual proof: none
 
@@ -22,34 +22,42 @@ Interface target identity is separated from contextual address. A local tile id 
 
 Successful closure-preserving candidates can be materialized through an explicitly supplied MorphTile runtime into a real `morphtile-kit`, with MorphTile-owned hashing and verified fresh-world import. Arbitrary dependency records that the current kit format cannot represent HOLD rather than being dropped.
 
-## 0.6.3 candidate — source integrity before transport
+## 0.6.3 integrated source-integrity boundary
 
-Both public authored-data trust boundaries now perform descriptor-safe portable-data preflight before JSON-backed transport can change meaning:
+Both public authored-data trust boundaries perform descriptor-safe portable-data preflight before JSON-backed transport can change meaning:
 
 - the complete Assembly request before candidate union, dependency/world-requirement closure, provenance capture or hashing;
 - the supplied Assembly result and kit options before source-trace capture, dependency discharge, MorphTile translation or kit hashing.
 
-Accessors and `toJSON` hooks are not executed while deciding whether input is portable. Non-finite numbers HOLD as `HOLD_ASSEMBLY_INPUT_NONFINITE_VALUE` or `HOLD_KIT_INPUT_NONFINITE_VALUE`. Other values/structures that portable JSON would invoke, rewrite, drop or reinterpret HOLD as `HOLD_ASSEMBLY_INPUT_NONPORTABLE_VALUE` or `HOLD_KIT_INPUT_NONPORTABLE_VALUE`, with the authored path retained. This includes `undefined`, functions, symbols, bigint, `-0`, sparse arrays, unexpected array properties, accessors, symbol-keyed properties, cycles, non-plain objects and non-enumerable authored fields.
+Accessors and `toJSON` hooks are not executed while deciding whether input is portable. Non-finite numbers HOLD as `HOLD_ASSEMBLY_INPUT_NONFINITE_VALUE` or `HOLD_KIT_INPUT_NONFINITE_VALUE`. Other values/structures that portable JSON would invoke, rewrite, drop or reinterpret HOLD as `HOLD_ASSEMBLY_INPUT_NONPORTABLE_VALUE` or `HOLD_KIT_INPUT_NONPORTABLE_VALUE`, with the authored path retained. The kit boundary independently rechecks supplied Assembly-result objects; a `CANDIDATE` label alone is not proof that externally supplied or older result matter is transport-safe.
 
-The kit boundary independently rechecks supplied Assembly-result objects; a `CANDIDATE` label alone is not proof that externally supplied or older result matter is transport-safe.
+## PR #20 candidate — reject interception before reflection
 
-## Exact evidence boundary
+Descriptor-safe validation is still insufficient for JavaScript `Proxy` values because prototype lookup, key enumeration, descriptor reads and array checks can themselves be intercepted. PR #20 rejects live or revoked Proxy values with Node's non-trapping `util.types.isProxy()` check before those reflective operations. The same ordering is used while deriving fallback HOLD metadata, and the kit path avoids revoked-Proxy-sensitive reflection before its own portability preflight.
 
-PR #19 is rebased directly onto current Assembly main rather than stacked on stale PR #18. Its workflow uses only the integrated heads listed above; candidate-only Interface checkouts are not part of the integrated baseline. Exact producer CI for the current PR head must be green before any technical-validity claim, and independent Verification must replay accessor/`toJSON` non-execution plus portable controls before integration.
+The candidate regressions require root and nested request Proxies to HOLD with zero trap executions, revoked root requests to HOLD instead of throwing, proxied kit candidates to HOLD with zero traps, and revoked Assembly results / kit options to fail closed. Ordinary portable Assembly and kit flows remain the positive control.
 
-Producer-green is not CANON, does not establish visual quality, and does not authorize merge.
+Independent Verification #30 passed the Proxy implementation at Assembly head `2ac0df773c8318b46945fb5814b7c5d4b78a3e10` while exercising the then-current repaired sibling candidates. After Form #17, Surface #15 and Interface #12 merged, the producer evidence lane was intentionally re-pinned to their actual merged main identities listed above. Because that evidence refresh changes the Assembly candidate SHA, exact-head producer CI must be green again and any independent exact-head verification claim must name the refreshed head rather than inheriting the earlier SHA.
+
+## Reusable rules learned
+
+**Authorship must be established before transport can transform it.** Serialization is not validation.
+
+**Interception must be rejected before reflection.** Descriptor-safe reads do not protect a boundary when the reflection primitive itself can execute caller-controlled Proxy traps.
+
+**Implementation correctness and ecosystem-evidence freshness are separate claims.** A previously verified implementation does not make stale sibling pins current; once sibling candidates merge, Assembly re-proves against those merged identities without treating later unmerged work as CANON.
 
 ## Placement decision
 
-The 0.6.3 repair belongs in Assembly Machine. Assembly owns preservation of the complete combined closure before its own serialization/hashing and at its kit handoff. MorphTile core already supplies the universal runtime/kit representation once data reaches it safely; no new universal core primitive is required by this change.
+The source-integrity and compatibility-evidence work belongs in Assembly Machine. Assembly owns preservation of the complete combined closure before its own serialization/hashing and at its kit handoff. MorphTile core already supplies the universal runtime/kit representation once data reaches it safely; no new universal core primitive is required by this change.
 
 ## HELD / open
 
-- Independent Verification of the exact 0.6.3 PR head is required.
+- Exact-head producer CI is required after the current merged-sibling re-pin; independent Verification should replay the refreshed exact Assembly head before integration.
 - No automatic conflict winner or priority policy for incompatible candidate, word, definition or dependency variants.
 - Assembly does not invent, fetch or synthesize missing definitions, dependencies, `ui_panel` eligibility, target identity or parent/world context.
 - External or contextual dependencies not present in the portable kit remain HOLD.
 - No arbitrary Interface operation composition or Interface v0.6+ compatibility without separate proof.
 - Compatibility is limited to exact pinned sibling/core revisions exercised by CI.
-- Surface/Form source-integrity candidates that are still unmerged are not treated as integrated CANON.
+- Open sibling candidates such as newer Interface/Form/Surface work are evidence only and are not treated as integrated CANON before merge.
 - No visual-quality proof, automatic CANON, self-merge or merge authority.

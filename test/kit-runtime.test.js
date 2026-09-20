@@ -46,7 +46,7 @@ function requestWithInterfaceBundle() {
   return request;
 }
 
-test("kit materialization refuses to drop arbitrary dependency closure", () => {
+test("kit materialization refuses to drop arbitrary dependency closure and preserves source trace on HOLD", () => {
   const request = JSON.parse(JSON.stringify(baseRequest));
   request.request_id = "assembly-kit-dependency-hold";
   request.dependencies = [{ id: "external-pack", ref: "sha256:abc" }];
@@ -55,9 +55,12 @@ test("kit materialization refuses to drop arbitrary dependency closure", () => {
   const out = materializeKit(assembled, MT || {});
   assert.equal(out.status, "HOLD");
   assert.equal(out.holds[0].code, MT ? "HOLD_KIT_DEPENDENCY_UNREPRESENTABLE" : "HOLD_MORPHTILE_RUNTIME_CONTRACT_MISSING");
+  assert.deepEqual(out.source_closure_hash, assembled.closure_hash);
+  assert.deepEqual(out.source_provenance, assembled.source_provenance);
+  assert.deepEqual(out.source_warnings, assembled.warnings);
 });
 
-test("pinned MorphTile runtime accepts the generated complete kit with verified hash", { skip: !MT }, () => {
+test("pinned MorphTile runtime accepts the generated complete kit with verified hash and source trace", { skip: !MT }, () => {
   const assembled = run(requestWithWord());
   assert.equal(assembled.status, "CANDIDATE");
   assert.equal(assembled.dependencies.length, 0);
@@ -70,6 +73,9 @@ test("pinned MorphTile runtime accepts the generated complete kit with verified 
   assert.equal(out.kit.expect.words, 1);
   assert.deepEqual(out.kit.expect.missing, []);
   assert.equal(MT.validateTile(out.kit.tile).ok, true);
+  assert.deepEqual(out.source_closure_hash, assembled.closure_hash);
+  assert.deepEqual(out.source_provenance, assembled.source_provenance);
+  assert.deepEqual(out.source_warnings, assembled.warnings);
 
   const receiver = MT.createWorld("Elsewhere");
   const imported = MT.importKit(receiver, JSON.parse(JSON.stringify(out.kit)));
@@ -77,6 +83,22 @@ test("pinned MorphTile runtime accepts the generated complete kit with verified 
   assert.equal(imported.evidence, "verified_payload_sha256");
   assert.deepEqual(imported.ops.map((op) => op.op), ["word.define", "tile.add"]);
   assert.equal(out.runtime_contract.engine_version, MT.VERSION);
+});
+
+test("source provenance is inspectable but intentionally outside MorphTile kit content identity", { skip: !MT }, () => {
+  const assembled = run(requestWithWord());
+  const first = materializeKit(assembled, MT);
+  assert.equal(first.status, "CANDIDATE", JSON.stringify(first.holds));
+
+  const traced = JSON.parse(JSON.stringify(assembled));
+  traced.source_provenance.push({ input: 99, provenance: { audit: "different transport history" } });
+  traced.warnings.push({ code: "TRACE_ONLY_WARNING" });
+  const second = materializeKit(traced, MT);
+  assert.equal(second.status, "CANDIDATE", JSON.stringify(second.holds));
+
+  assert.equal(second.kit.expect.sha256, first.kit.expect.sha256);
+  assert.notDeepEqual(second.source_provenance, first.source_provenance);
+  assert.notDeepEqual(second.source_warnings, first.source_warnings);
 });
 
 test("Interface view and presentation survive complete kit export and verified fresh-world import", { skip: !MT }, () => {

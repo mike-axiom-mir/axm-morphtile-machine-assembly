@@ -10,7 +10,7 @@ const interfacePath = process.env.INTERFACE_NESTED_MACHINE_PATH;
 const interfaceCommit = process.env.INTERFACE_NESTED_COMMIT;
 const corePath = process.env.MORPHTILE_CORE_PATH;
 const coreCommit = process.env.MORPHTILE_COMMIT;
-const EXPECTED_INTERFACE_COMMIT = "bc4b6196b0a0f8a6df39c71cdd8db22c1f787f83";
+const EXPECTED_INTERFACE_COMMIT = "5748ddd6f181bbad5ccfdcafd7239562c4fe228a";
 const EXPECTED_MORPHTILE_COMMIT = "429a344f7d9333bef01cf9de1c292c3af09abec2";
 const ready = Boolean(interfacePath && corePath);
 

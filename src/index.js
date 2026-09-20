@@ -61,6 +61,17 @@ function candidateOf(input) {
   return hasOwn(input, "candidate") ? input.candidate : input;
 }
 
+function preserveInputWarnings(input, inputIndex, warnings) {
+  for (const warning of (input && input.warnings) || []) {
+    warnings.push({
+      code: "UPSTREAM_WARNING",
+      input: inputIndex,
+      machine: input && input.machine && input.machine.id ? input.machine.id : null,
+      warning: clone(warning)
+    });
+  }
+}
+
 function inspectInputEnvelope(input, inputIndex, holds) {
   if (!input || typeof input !== "object" || Array.isArray(input) || !hasOwn(input, "status")) return true;
 
@@ -127,13 +138,13 @@ function foldViewOperation(assembled, candidate, inputIndex, conflicts, holds) {
       detail: "view-operation candidate contains unsupported field(s)",
       fields: candidateUnknown
     });
-    return;
+    return false;
   }
 
   const operation = candidate.operation;
   if (!operation || typeof operation !== "object" || Array.isArray(operation)) {
     holds.push({ code: "HOLD_VIEW_OPERATION_SHAPE_INVALID", input: inputIndex, detail: "operation must be an object" });
-    return;
+    return false;
   }
   const operationUnknown = Object.keys(operation).filter((key) => !VIEW_OPERATION_KEYS.has(key)).sort();
   if (operationUnknown.length) {
@@ -143,19 +154,19 @@ function foldViewOperation(assembled, candidate, inputIndex, conflicts, holds) {
       detail: "view.set contains unsupported field(s)",
       fields: operationUnknown
     });
-    return;
+    return false;
   }
   if (operation.op !== "view.set") {
     holds.push({ code: "HOLD_VIEW_OPERATION_SHAPE_INVALID", input: inputIndex, detail: "operation.op must be view.set" });
-    return;
+    return false;
   }
   if (typeof operation.id !== "string" || !TILE_ID.test(operation.id)) {
     holds.push({ code: "HOLD_VIEW_OPERATION_TARGET_INVALID", input: inputIndex, target: clone(operation.id) });
-    return;
+    return false;
   }
   if (!operation.view || typeof operation.view !== "object" || Array.isArray(operation.view)) {
     holds.push({ code: "HOLD_VIEW_OPERATION_SHAPE_INVALID", input: inputIndex, detail: "operation.view must be an object" });
-    return;
+    return false;
   }
   if (!assembled.id) {
     holds.push({
@@ -164,7 +175,7 @@ function foldViewOperation(assembled, candidate, inputIndex, conflicts, holds) {
       target: operation.id,
       detail: "Assembly requires an explicit tile identity before folding an operation into new matter."
     });
-    return;
+    return false;
   }
   if (operation.id !== assembled.id) {
     holds.push({
@@ -173,14 +184,16 @@ function foldViewOperation(assembled, candidate, inputIndex, conflicts, holds) {
       target: operation.id,
       assembled_id: assembled.id
     });
-    return;
+    return false;
   }
 
   mergeObject(assembled, { view: operation.view }, "", conflicts);
+  return true;
 }
 
 function mergeCandidate(assembled, input, inputIndex, conflicts, holds, warnings, heldCandidates) {
-  if (!inspectInputEnvelope(input, inputIndex, holds)) return;
+  preserveInputWarnings(input, inputIndex, warnings);
+  if (!inspectInputEnvelope(input, inputIndex, holds)) return false;
 
   const candidate = candidateOf(input) || {};
   const schema = candidate.schema || null;
@@ -192,26 +205,26 @@ function mergeCandidate(assembled, input, inputIndex, conflicts, holds, warnings
       detail: "Assembly Machine only folds proven tile/facet/capability candidates and the exact stable view.set operation contract into a tile spec; other operation candidates remain explicit until proven."
     });
     heldCandidates.push({ input: inputIndex, schema, candidate: clone(candidate) });
-    return;
+    return false;
   }
   if (!schema) warnings.push({ code: "LEGACY_SCHEMALESS_FRAGMENT", input: inputIndex });
 
   if (schema === "morphtile.view-operation/v0.4") {
-    foldViewOperation(assembled, candidate, inputIndex, conflicts, holds);
-    return;
+    return foldViewOperation(assembled, candidate, inputIndex, conflicts, holds);
   }
 
   mergeFormHints(assembled.form_hints, candidate.form_hints);
 
   if (schema === "morphtile.facet-candidate/v0.4" || (candidate.facet && Object.prototype.hasOwnProperty.call(candidate, "value"))) {
     mergeObject(assembled.facets, { [candidate.facet]: candidate.value }, "facets", conflicts);
-    return;
+    return false;
   }
 
   mergeObject(assembled.facets, candidate.facets || {}, "facets", conflicts);
   for (const field of ["view", "presentation", "params", "capabilities"]) {
     if (candidate[field] !== undefined) mergeObject(assembled, { [field]: candidate[field] }, "", conflicts);
   }
+  return false;
 }
 
 function dependencyIdentity(value) {
@@ -317,11 +330,21 @@ function run(request) {
   };
   if (assemblyId) assembled.id = assemblyId;
 
-  inputs.forEach((input, index) => mergeCandidate(assembled, input, index, conflicts, holds, warnings, heldCandidates));
+  let foldedViewOperation = false;
+  inputs.forEach((input, index) => {
+    if (mergeCandidate(assembled, input, index, conflicts, holds, warnings, heldCandidates)) foldedViewOperation = true;
+  });
   const dependencies = collectDependencies(request, inputs, holds);
   const worldRequirements = collectWorldRequirements(request, inputs, holds);
   const sourceProvenance = collectSourceProvenance(inputs);
 
+  if (foldedViewOperation && !assembled.form_hints.includes("ui_panel")) {
+    holds.push({
+      code: "HOLD_VIEW_TARGET_FORM_MISSING",
+      required_form: "ui_panel",
+      detail: "The stable Interface view contract requires the assembled target to declare ui_panel; Assembly will not invent that form hint."
+    });
+  }
   if (conflicts.length) holds.push({ code: "HOLD_ASSEMBLY_CONFLICT", paths: Array.from(new Set(conflicts)).sort() });
   if (holds.length) {
     return result(request, MACHINE, "HOLD", {
@@ -331,7 +354,7 @@ function run(request) {
       held_candidates: heldCandidates,
       warnings,
       holds,
-      evidence: [{ kind: "INPUTS", status: "PASS", check: "input envelopes, upstream HOLDs, unsupported candidates, and addressed operation boundaries remain inspectable and are not promoted without proof" }]
+      evidence: [{ kind: "INPUTS", status: "PASS", check: "input envelopes, upstream HOLDs/warnings, unsupported candidates, and addressed operation boundaries remain inspectable and are not promoted without proof" }]
     });
   }
 
@@ -344,9 +367,9 @@ function run(request) {
     closure_hash: hash,
     warnings,
     evidence: [
-      { kind: "ASSEMBLY", status: "PASS", check: "deterministic compatible candidate union without overwrite; proven view.set is folded only when its target equals the explicit assembled tile identity" },
-      { kind: "CLOSURE", status: "PASS", check: "request/input dependency and world-requirement closure plus source provenance are preserved without silent replacement" },
-      { kind: "HASH", status: "PASS", check: "candidate + dependencies + world requirements are bound by canonical SHA-256; provenance/evidence are intentionally outside content identity" }
+      { kind: "ASSEMBLY", status: "PASS", check: "deterministic compatible candidate union without overwrite; proven view.set is folded only when target identity matches and ui_panel eligibility already exists" },
+      { kind: "CLOSURE", status: "PASS", check: "request/input dependency and world-requirement closure plus source provenance and upstream warnings are preserved without silent replacement" },
+      { kind: "HASH", status: "PASS", check: "candidate + dependencies + world requirements are bound by canonical SHA-256; provenance/evidence/warnings are intentionally outside content identity" }
     ]
   });
 }

@@ -2,7 +2,9 @@
 
 const test = require("node:test");
 const assert = require("node:assert/strict");
+const path = require("node:path");
 const { run } = require("../src");
+const { materializeKit } = require("../src/kit");
 
 function definition(id) {
   return {
@@ -122,4 +124,28 @@ test("absence of an embedded identity remains compatible; only contradictory exp
   assert.equal(out.status, "CANDIDATE", JSON.stringify(out.holds));
   assert.deepEqual(out.required_definitions, ["panel"]);
   assert.equal(Object.prototype.hasOwnProperty.call(out.world_requirements.definitions.panel, "id"), false);
+});
+
+const runtimePath = process.env.MORPHTILE_CORE_PATH;
+const runtimeTest = runtimePath ? test : test.skip;
+
+runtimeTest("kit materialization independently refuses a contradictory named closure even if an older/forged result claims CANDIDATE", () => {
+  const MT = require(path.resolve(runtimePath));
+  const good = run(request({
+    definitions: { panel: definition("panel") },
+    words: { clamp: word("clamp") }
+  }));
+  assert.equal(good.status, "CANDIDATE", JSON.stringify(good.holds));
+
+  const forged = JSON.parse(JSON.stringify(good));
+  forged.world_requirements.definitions.panel.id = "beam";
+  const kit = materializeKit(forged, MT, { name: "Identity mismatch must not export" });
+
+  assert.equal(kit.status, "HOLD");
+  assert.equal(kit.kit, null);
+  assert.equal(kit.holds[0].code, "HOLD_KIT_WORLD_REQUIREMENT_IDENTITY_MISMATCH");
+  assert.equal(kit.holds[0].identity_holds[0].code, "HOLD_DEFINITION_IDENTITY_MISMATCH");
+  assert.equal(kit.holds[0].identity_holds[0].identity, "panel");
+  assert.equal(kit.holds[0].identity_holds[0].embedded_identity, "beam");
+  assert.deepEqual(kit.source_closure_hash, good.closure_hash, "source receipt must remain inspectable on materialization HOLD");
 });

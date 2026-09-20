@@ -1,6 +1,7 @@
 "use strict";
 
 const { clone } = require("./envelope");
+const { inspectWorldRequirementIdentities } = require("./index");
 
 function sourceTrace(assemblyResult) {
   return {
@@ -57,6 +58,13 @@ function materializeKit(assemblyResult, runtime, options = {}) {
   const requirements = assemblyResult.world_requirements || {};
   const words = clone(requirements.words || {});
   const defs = clone(requirements.definitions || requirements.defs || {});
+  const identityHolds = inspectWorldRequirementIdentities({ words, definitions: defs });
+  if (identityHolds.length) {
+    return hold("HOLD_KIT_WORLD_REQUIREMENT_IDENTITY_MISMATCH", "Named world requirements carry contradictory embedded identity; refusing kit export because MorphTile import would otherwise normalize by map key.", {
+      ...trace,
+      hold: { identity_holds: identityHolds }
+    });
+  }
 
   let tile;
   try {

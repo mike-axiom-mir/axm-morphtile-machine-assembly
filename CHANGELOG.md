@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.6.1 — 2026-09-20
+
+- Added fail-closed identity checks for named MorphTile world requirements: an explicit word `name` must match its `words` map key and an explicit definition `id` must match its `definitions` map key.
+- Preserved contradictory authored closure exactly in HOLD output instead of relying on MorphTile import normalization to silently rewrite the embedded identity.
+- Kept implicit identities compatible: a word/definition body that omits its embedded identity is not rejected merely because the map key is authoritative.
+- Added deterministic regressions for mismatched word/definition identity, matching identity, request immutability, and implicit-identity compatibility.
+
 ## 0.6.0 — 2026-09-20
 
 - Added fail-closed compatibility for the exact Interface Machine v0.5 transport schemas `morphtile.view-operation/v0.5` and `morphtile.interface-operations/v0.5` without accepting arbitrary future Interface schemas.

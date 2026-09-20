@@ -34,6 +34,21 @@ jobs:
           path: .siblings/interface
       - uses: actions/checkout@v4
         with:
+          repository: mike-axiom-mir/axm-morphtile-machine-form
+          ref: 33625a6e98cdeb985635e0cdcfd5c754ad8505fe
+          path: .siblings/round8/form
+      - uses: actions/checkout@v4
+        with:
+          repository: mike-axiom-mir/axm-morphtile-machine-surface
+          ref: 536a745ddea4d996d0daf193649db939fe3ade83
+          path: .siblings/round8/surface
+      - uses: actions/checkout@v4
+        with:
+          repository: mike-axiom-mir/axm-morphtile-machine-interface
+          ref: 3f29f98b4125fe3376f02aabc509dc3da610deae
+          path: .siblings/round8/interface
+      - uses: actions/checkout@v4
+        with:
           repository: mike-axiom-mir/axm-morphtile
           ref: 2bdf8eade1376055473b9cc1b11734b72a5566e5
           path: .runtime/morphtile
@@ -55,3 +70,13 @@ jobs:
           INTERFACE_V05_COMMIT: 271fbf2abe6fc214d30076b9417655f084221eac
           INTERFACE_NESTED_COMMIT: 271fbf2abe6fc214d30076b9417655f084221eac
           INTERFACE_PROOF_COMMIT: 271fbf2abe6fc214d30076b9417655f084221eac
+          ROUND8_FORM_MACHINE_PATH: ${{ github.workspace }}/.siblings/round8/form/src
+          ROUND8_FORM_COMMIT: 33625a6e98cdeb985635e0cdcfd5c754ad8505fe
+          ROUND8_SURFACE_MACHINE_PATH: ${{ github.workspace }}/.siblings/round8/surface/src
+          ROUND8_SURFACE_COMMIT: 536a745ddea4d996d0daf193649db939fe3ade83
+          ROUND8_CAPABILITY_MACHINE_PATH: ${{ github.workspace }}/.siblings/capability/src
+          ROUND8_CAPABILITY_COMMIT: edc07af182ee26ca1ceb64b5d5205591ec6aca9d
+          ROUND8_INTERFACE_MACHINE_PATH: ${{ github.workspace }}/.siblings/round8/interface/src
+          ROUND8_INTERFACE_COMMIT: 3f29f98b4125fe3376f02aabc509dc3da610deae
+          ROUND8_MORPHTILE_CORE_PATH: ${{ github.workspace }}/.runtime/morphtile/core/morphtile.js
+          ROUND8_MORPHTILE_COMMIT: 2bdf8eade1376055473b9cc1b11734b72a5566e5

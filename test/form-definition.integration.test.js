@@ -8,7 +8,7 @@ const formPath = process.env.FORM_MACHINE_PATH;
 const formCommit = process.env.FORM_COMMIT;
 const corePath = process.env.MORPHTILE_CORE_PATH;
 const ready = !!formPath && !!corePath;
-const EXPECTED_FORM_COMMIT = "39024ee1a0e0f4472a798accf3d3a0254a43e216";
+const EXPECTED_FORM_COMMIT = "4fb32c9b591de40aa7faf0d0c63738110a5dbd0b";
 
 function req(id, intent) {
   return {

@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.5.1 — 2026-09-20
+
+- Made Assembly HOLD reports lossless for candidate, word, and definition conflicts by preserving both exact competing values and their source lanes.
+- Kept deterministic first-seen closure semantics while exposing rejected variants instead of hiding them behind path-only conflict codes.
+- Added regression coverage for material-facet conflicts, word conflicts, and definition conflicts.
+- Kept conflict evidence outside successful content identity: only successful candidate + dependency + world-requirement closure remains hashed.
+
 ## 0.5.0 — 2026-09-20
 
 - Added fail-closed folding for the exact current Interface Machine `morphtile.interface-operations/v0.4` contract: one `view.set` plus one `presentation.set` targeting the same explicit tile.

@@ -32,7 +32,7 @@ Assembly preserves:
 - source machine/request/provenance metadata;
 - upstream warnings as sourced `UPSTREAM_WARNING` records.
 
-Same-identity dependency drift and conflicting named words/definitions HOLD rather than selecting a winner. As of v0.5.1 candidate, HOLD reports also carry both exact competing variants and both source lanes. Generic candidate conflicts do the same for conflicting facet/view/presentation/parameter/capability matter.
+Same-identity dependency drift and conflicting named words/definitions HOLD rather than selecting a winner. As of v0.5.1, HOLD reports also carry both exact competing variants and both source lanes. Generic candidate conflicts do the same for conflicting facet/view/presentation/parameter/capability matter.
 
 The first-seen value remains in the held partial closure only to keep reporting deterministic; its presence is not acceptance or CANON. The competing value is preserved in the HOLD evidence.
 
@@ -67,17 +67,17 @@ Arbitrary Assembly dependency records are not representable in the current Morph
 
 ## Pinned integration lane
 
-Current CI pins exact revisions of:
+Current CI pins exact integrated revisions of:
 
-- Form Machine: `492db62109756f137d1e1a8bfa8ed03db7769447`
-- Surface Machine: `50d7f606ffb9a1847cf011391f9acf0f923ecef2`
-- Capability Machine: `48915b6602142d263629ca5db87052f82fdf9a0c`
-- Interface Machine: `34ee5a3293e551a6b49295e1efa7908d7de783ed`
-- MorphTile core: `a579182ae585e5722ac87dd0cc8209963b18d000`
+- Form Machine: `574e0dd348942507685f2892bdebbf2fb5170a03`
+- Surface Machine: `ac8e551fb9e8ba266024fcbca473b8491996ea63`
+- Capability Machine: `0e0f60eb477d8cb20f8dbe259f546fa7c5b36e24`
+- Interface Machine: `260e45599c91cbcb0ec8a5a54153323e4e5d0c6a`
+- MorphTile core: `b6b086edb70fd4657495fcf01cb9fcdedceafdaf`
 
 These test-time checkouts are evidence only; sibling repositories and MorphTile core are not runtime dependencies of Assembly.
 
-Unmerged sibling candidates are not treated as canonical inputs. When a sibling contract is integrated, Assembly must re-earn compatibility against the new exact head rather than infer it.
+When a sibling contract is integrated or MorphTile core moves, Assembly must re-earn compatibility against the new exact heads rather than infer it.
 
 ## Run
 
@@ -91,9 +91,9 @@ Node 18 or later; zero third-party runtime dependencies; no secrets or network r
 
 - IMPLEMENTED ON MAIN: deterministic tile/facet/capability folding, fail-closed upstream-envelope handling, request/input closure collection, source provenance, upstream-warning preservation, canonical closure hashing, exact addressed Interface view/presentation folding, schema gating, and runtime-backed MorphTile kit materialization.
 - CANDIDATE IN v0.5.1: lossless conflict evidence for candidate, word, and definition clashes.
-- PINNED TEST HARNESS: four stable sibling machines plus MorphTile v0.4 are checked out at exact commits in CI and exercised together.
+- PINNED TEST HARNESS: four integrated sibling machines plus MorphTile v0.4 are checked out at exact commits in CI and exercised together.
 - EXPERIMENTAL: envelope v0.1, `world_requirements`, `source_provenance`, `held_candidates`, `closure_hash`, and candidate schemas in this repository.
 - NOT CLAIMED: compatibility outside pinned revisions, arbitrary operation composition, automatic `ui_panel` invention, visual quality, automatic CANON, or merge authority.
-- HELD: unmerged sibling candidate contracts, arbitrary dependency transport through MorphTile kits, and any conflict auto-resolution policy.
+- HELD: arbitrary dependency transport through MorphTile kits and any conflict auto-resolution policy.
 
 This is candidate machinery, not automatic canon and not evidence that MorphTile can autonomously manufacture MorphTile.

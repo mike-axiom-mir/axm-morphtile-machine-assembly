@@ -1,5 +1,7 @@
 "use strict";
 
+const { types: { isProxy } } = require("node:util");
+
 class PortableDataError extends Error {
   constructor(code, path, detail) {
     super(detail);
@@ -44,6 +46,14 @@ function clonePortableValue(value, path = "value", stack = new Set()) {
 
   if (typeof value !== "object") {
     nonportable(path, "Assembly input contains an unsupported portable value.");
+  }
+
+  // Descriptor-safe reflection is still executable for JavaScript Proxy values:
+  // prototype/key/descriptor operations can dispatch caller-controlled traps.
+  // Detect Proxy interception before any reflective inspection so source-integrity
+  // validation itself cannot become a caller-code execution surface.
+  if (isProxy(value)) {
+    nonportable(path, "Assembly input uses a Proxy object whose traps could execute during authored-data inspection.");
   }
 
   if (stack.has(value)) {
@@ -116,7 +126,9 @@ function clonePortableValue(value, path = "value", stack = new Set()) {
 }
 
 function safeRequestId(request) {
-  if (!request || typeof request !== "object" || Array.isArray(request)) return null;
+  if (!request || typeof request !== "object") return null;
+  if (isProxy(request)) return null;
+  if (Array.isArray(request)) return null;
   const descriptor = Object.getOwnPropertyDescriptor(request, "request_id");
   if (!descriptor || !("value" in descriptor) || typeof descriptor.value !== "string" || !descriptor.value) return null;
   return descriptor.value;

@@ -359,7 +359,7 @@ function resolveKitDependencies(assemblyResult, runtime, stagedWorld) {
 }
 
 function materializeKit(assemblyResult, runtime, options = {}) {
-  if (!assemblyResult || typeof assemblyResult !== "object" || Array.isArray(assemblyResult)) {
+  if (!assemblyResult || typeof assemblyResult !== "object") {
     return hold("HOLD_ASSEMBLY_RESULT_NOT_CANDIDATE", "A MorphTile kit may only be materialized from a successful Assembly Machine candidate.");
   }
 

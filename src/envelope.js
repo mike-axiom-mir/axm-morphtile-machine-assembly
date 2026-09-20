@@ -27,6 +27,7 @@ function result(request, machine, status, fields = {}) {
     dependencies: clone(fields.dependencies || []),
     world_requirements: fields.world_requirements === undefined ? null : clone(fields.world_requirements),
     source_provenance: clone(fields.source_provenance || []),
+    held_candidates: clone(fields.held_candidates || []),
     closure_hash: fields.closure_hash === undefined ? null : clone(fields.closure_hash),
     evidence: clone(fields.evidence || []),
     warnings: clone(fields.warnings || []),

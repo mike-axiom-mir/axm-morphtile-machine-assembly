@@ -1,11 +1,11 @@
 # Status
 
 - Candidate version: 0.6.3
-- State: CANDIDATE — PROXY SOURCE-INTEGRITY REPAIR OPEN; CURRENT-MAIN EVIDENCE RE-PROOF IN PROGRESS
+- State: CANDIDATE — MERGED FORM 0.11 PORTABLE-ASSEMBLY RE-PROOF OPEN
 - Test command: `npm test`
-- Assembly base: `1b81da5e3c885a904236cc643c910b83ad0d7bc6`
+- Assembly PR base: `688a39fc9762b2192d7db9f777416dafe5bf6ed7`
 - MorphTile runtime target: v0.4 at `429a344f7d9333bef01cf9de1c292c3af09abec2`
-- Form integrated evidence: `9f43f9e3ffbaf1687419d90e7e8e3185092e48f5`
+- Form integrated evidence: `6adea73ea3a396aa60fc6207372ba7ea611c60fc`
 - Surface integrated evidence: `5184275314503333912cf30c97c203323a1ab7e1`
 - Capability integrated evidence: `edc07af182ee26ca1ceb64b5d5205591ec6aca9d`
 - Interface integrated evidence: `0e47cd09d613c6c934cd7adbdb6c7a18eeaaf6ed`
@@ -14,7 +14,7 @@
 
 ## Current Assembly capability
 
-Assembly deterministically combines compatible tile, facet, capability and the exact reviewed Interface v0.4/v0.5 transport candidates. It preserves dependency closure, words, definitions, upstream warnings, source provenance and a canonical SHA-256 closure hash. Same-identity conflicts HOLD with both variants and their sources instead of selecting a winner. Unsupported candidate schemas HOLD rather than disappearing.
+Assembly deterministically combines compatible tile, facet, capability and the exact reviewed Interface transport candidates. It preserves dependency closure, words, definitions, upstream warnings, source provenance and a canonical SHA-256 closure hash. Same-identity conflicts HOLD with both variants and their sources instead of selecting a winner. Unsupported candidate schemas HOLD rather than disappearing.
 
 Definition references in proven MorphTile recipe/capability forms are discovered and missing definitions HOLD. World-requirement word/definition identity is checked so an explicit embedded `name`/`id` cannot contradict the map key without a HOLD. Explicit falsey content remains content-bearing rather than being collapsed into omission.
 
@@ -31,13 +31,15 @@ Both public authored-data trust boundaries perform descriptor-safe portable-data
 
 Accessors and `toJSON` hooks are not executed while deciding whether input is portable. Non-finite numbers HOLD as `HOLD_ASSEMBLY_INPUT_NONFINITE_VALUE` or `HOLD_KIT_INPUT_NONFINITE_VALUE`. Other values/structures that portable JSON would invoke, rewrite, drop or reinterpret HOLD as `HOLD_ASSEMBLY_INPUT_NONPORTABLE_VALUE` or `HOLD_KIT_INPUT_NONPORTABLE_VALUE`, with the authored path retained. The kit boundary independently rechecks supplied Assembly-result objects; a `CANDIDATE` label alone is not proof that externally supplied or older result matter is transport-safe.
 
-## PR #20 candidate — reject interception before reflection
+JavaScript Proxy values are rejected with Node's non-trapping `util.types.isProxy()` check before prototype lookup, key enumeration, descriptor reads or array checks can execute caller-controlled traps. Root/nested/revoked request and kit boundary regressions preserve fail-closed behavior and zero caller trap execution. Independent Verification #31 replayed the exact integrated Assembly PR #20 head and PASSed these boundaries before Creation Director integration; Assembly main `688a39fc...` is the resulting merged state.
 
-Descriptor-safe validation is still insufficient for JavaScript `Proxy` values because prototype lookup, key enumeration, descriptor reads and array checks can themselves be intercepted. PR #20 rejects live or revoked Proxy values with Node's non-trapping `util.types.isProxy()` check before those reflective operations. The same ordering is used while deriving fallback HOLD metadata, and the kit path avoids revoked-Proxy-sensitive reflection before its own portability preflight.
+## PR #21 candidate — merged Form 0.11 portable rotation convergence
 
-The candidate regressions require root and nested request Proxies to HOLD with zero trap executions, revoked root requests to HOLD instead of throwing, proxied kit candidates to HOLD with zero traps, and revoked Assembly results / kit options to fail closed. Ordinary portable Assembly and kit flows remain the positive control.
+Form main moved from `9f43f9e3...` to integrated Form 0.11 `6adea73e...`, adding bounded `repeat.rot_step` progression while retaining definition-backed `with_step` progression. Assembly main still named the prior Form identity in its exact integration lane, so compatibility evidence had expired even though no Assembly runtime behavior had changed.
 
-Independent Verification #30 passed the Proxy implementation at Assembly head `2ac0df773c8318b46945fb5814b7c5d4b78a3e10` while exercising the then-current repaired sibling candidates. After Form #17, Surface #15 and Interface #12 merged, the producer evidence lane was intentionally re-pinned to their actual merged main identities listed above. Because that evidence refresh changes the Assembly candidate SHA, exact-head producer CI must be green again and any independent exact-head verification claim must name the refreshed head rather than inheriting the earlier SHA.
+PR #21 re-pins the exact Form checkout and receipt to `6adea73e...`. It also adds an end-to-end receiver proof for a definition-backed repeat that uses both `rot_step` and `with_step`: the Form-emitted loop expressions must remain byte-for-structure equivalent through Assembly combination and kit materialization, the reusable `panel` definition must remain required rather than silently synthesized, fresh-world MorphTile kit import must verify its payload hash, and imported-world mesh compilation must remain finite without dropping the rotation expression.
+
+No Assembly runtime source is widened by this candidate. The purpose is to turn producer semantic growth into exact portable-closure evidence at the Assembly boundary.
 
 ## Reusable rules learned
 
@@ -47,17 +49,19 @@ Independent Verification #30 passed the Proxy implementation at Assembly head `2
 
 **Implementation correctness and ecosystem-evidence freshness are separate claims.** A previously verified implementation does not make stale sibling pins current; once sibling candidates merge, Assembly re-proves against those merged identities without treating later unmerged work as CANON.
 
+**New producer semantics need receiver proof when portability is part of the product claim.** Producer/runtime success alone does not prove Assembly preserved the exact recipe plus reusable-definition closure through kit transport and fresh-world import.
+
 ## Placement decision
 
-The source-integrity and compatibility-evidence work belongs in Assembly Machine. Assembly owns preservation of the complete combined closure before its own serialization/hashing and at its kit handoff. MorphTile core already supplies the universal runtime/kit representation once data reaches it safely; no new universal core primitive is required by this change.
+The current Form 0.11 work belongs in Assembly integration/evidence. Form owns `rot_step` producer vocabulary and MorphTile already owns expression-valued recipe execution; Assembly only needs to prove that its closure and kit path preserve the merged producer output exactly. No new universal MorphTile representation/runtime primitive is required by this Assembly candidate.
 
 ## HELD / open
 
-- Exact-head producer CI is required after the current merged-sibling re-pin; independent Verification should replay the refreshed exact Assembly head before integration.
+- Exact-head producer CI is required for PR #21; independent Verification should replay the final exact Assembly head before integration.
 - No automatic conflict winner or priority policy for incompatible candidate, word, definition or dependency variants.
 - Assembly does not invent, fetch or synthesize missing definitions, dependencies, `ui_panel` eligibility, target identity or parent/world context.
 - External or contextual dependencies not present in the portable kit remain HOLD.
-- No arbitrary Interface operation composition or Interface v0.6+ compatibility without separate proof.
+- No arbitrary future Interface schema compatibility without separate proof.
 - Compatibility is limited to exact pinned sibling/core revisions exercised by CI.
-- Open sibling candidates such as newer Interface/Form/Surface work are evidence only and are not treated as integrated CANON before merge.
+- Open sibling candidates such as Surface #16, Interface #13 and MorphTile core #15 are evidence only and are not treated as integrated CANON before merge.
 - No visual-quality proof, automatic CANON, self-merge or merge authority.

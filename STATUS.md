@@ -5,6 +5,7 @@
 - Test command: `npm test`
 - Assembly base: `08836233457d90b571063a8342434c572b87cd5e`
 - MorphTile runtime prerequisite candidate: PR #16 at `43a9eccf831a49aedc169a5ce0b6701e22ae4cc3`
+- MorphTile prerequisite Verification: PASS in Verification round 7 / PR #33, exact replay against `43a9eccf831a49aedc169a5ce0b6701e22ae4cc3`
 - Form integrated evidence: `6adea73ea3a396aa60fc6207372ba7ea611c60fc`
 - Surface integrated evidence: `5184275314503333912cf30c97c203323a1ab7e1`
 - Capability integrated evidence: `edc07af182ee26ca1ceb64b5d5205591ec6aca9d`
@@ -30,7 +31,7 @@ Both public authored-data trust boundaries perform descriptor-safe portable-data
 
 Assembly previously used prototype-aware membership (`name in target`) while merging named word/definition closure into ordinary objects. That could confuse inherited JavaScript names such as `__proto__`, `constructor`, or `toString` with authored world requirements. The 0.6.4 candidate uses own-entry existence plus explicit own-property insertion, preserving those authored names as data and still HOLDing true own-entry conflicts.
 
-The receiver proof exposed a separate universal MorphTile runtime gap: current merged core `63a65c70...` preserved recipe-scope own-key identity but its world/kit registries still treated inherited prototype names as already-present definitions/words. MorphTile core PR #16 is therefore a bounded prerequisite candidate for this Assembly portable-kit proof. Its exact candidate head `43a9eccf...` preserves own-key identity through kit import/export, world insertion and merge-unit diff/apply; Assembly does not claim that candidate as CANON before independent review/integration.
+The receiver proof exposed a separate universal MorphTile runtime gap: current merged core `63a65c70...` preserved recipe-scope own-key identity but its world/kit registries still treated inherited prototype names as already-present definitions/words. MorphTile core PR #16 is therefore a bounded prerequisite candidate for this Assembly portable-kit proof. Its exact candidate head `43a9eccf...` preserves own-key identity through kit import/export, world insertion and merge-unit diff/apply. Independent Verification round 7 reproduced two old inherited-registry failures and PASSed the repaired exact head; Assembly still does not claim the unmerged core candidate as CANON before Creation Director integration.
 
 ## Reusable rules learned
 
@@ -48,7 +49,7 @@ The named-closure merge repair belongs in Assembly because Assembly owns combini
 
 ## HELD / open
 
-- MorphTile core PR #16 is an unmerged prerequisite candidate for the new portable own-key kit proof; independent Verification and Creation Director review remain required.
+- MorphTile core PR #16 is independently Verification-PASSed at exact head `43a9eccf...` but remains unmerged and still requires Creation Director integration authority.
 - The Assembly 0.6.4 candidate is unmerged and needs exact-head independent Verification before integration.
 - No automatic conflict winner or priority policy for incompatible candidate, word, definition or dependency variants.
 - Assembly does not invent, fetch or synthesize missing definitions, dependencies, `ui_panel` eligibility, target identity or parent/world context.

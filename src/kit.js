@@ -49,17 +49,58 @@ function stringSet(value) {
   return [...new Set(value)].sort();
 }
 
-function targetFacts(candidate) {
-  const facets = candidate && candidate.facets && typeof candidate.facets === "object" ? candidate.facets : {};
-  const logic = facets.logic && facets.logic.data && typeof facets.logic.data === "object" ? facets.logic.data : {};
-  const vars = logic.vars && typeof logic.vars === "object" && !Array.isArray(logic.vars) ? Object.keys(logic.vars).sort() : [];
-  const params = Array.isArray(candidate && candidate.params) ? candidate.params : [];
-  const sockets = facets.connect && Array.isArray(facets.connect.sockets) ? facets.connect.sockets : [];
+function targetFacts(candidate, runtime, stagedWorld) {
+  const facts = {
+    form_hints_include: new Set(),
+    readout_logic_vars: new Set(),
+    control_param_ids: new Set(),
+    action_input_signal_socket_ids: new Set()
+  };
+
+  const addMatter = (matter, extraSockets) => {
+    if (!matter || typeof matter !== "object" || Array.isArray(matter)) return;
+    const facets = matter.facets && typeof matter.facets === "object" ? matter.facets : {};
+    const logic = facets.logic && facets.logic.data && typeof facets.logic.data === "object" ? facets.logic.data : {};
+    const vars = logic.vars && typeof logic.vars === "object" && !Array.isArray(logic.vars) ? Object.keys(logic.vars) : [];
+    const params = Array.isArray(matter.params) ? matter.params : [];
+    const baseSockets = facets.connect && Array.isArray(facets.connect.sockets) ? facets.connect.sockets : [];
+    const sockets = baseSockets.concat(Array.isArray(extraSockets) ? extraSockets : []);
+
+    for (const hint of Array.isArray(matter.form_hints) ? matter.form_hints : []) {
+      if (typeof hint === "string") facts.form_hints_include.add(hint);
+    }
+    for (const name of vars) facts.readout_logic_vars.add(name);
+    for (const param of params) {
+      if (param && typeof param.id === "string" && param.id) facts.control_param_ids.add(param.id);
+    }
+    for (const socket of sockets) {
+      if (socket && socket.kind === "signal" && socket.dir === "in" && typeof socket.id === "string" && socket.id) {
+        facts.action_input_signal_socket_ids.add(socket.id);
+      }
+    }
+  };
+
+  addMatter(candidate);
+
+  for (const capability of Array.isArray(candidate && candidate.capabilities) ? candidate.capabilities : []) {
+    let grants = capability && capability.grants ? capability.grants : null;
+    if (runtime && stagedWorld && typeof runtime.grantsOf === "function") {
+      const resolved = runtime.grantsOf(stagedWorld, capability);
+      if (resolved && resolved.grants) grants = resolved.grants;
+    }
+    if (!grants || typeof grants !== "object" || Array.isArray(grants)) continue;
+    addMatter({
+      facets: grants.facets || {},
+      params: grants.params || [],
+      form_hints: grants.form_hints || []
+    }, grants.sockets);
+  }
+
   return {
-    form_hints_include: Array.isArray(candidate && candidate.form_hints) ? [...new Set(candidate.form_hints.filter((item) => typeof item === "string"))].sort() : [],
-    readout_logic_vars: vars,
-    control_param_ids: [...new Set(params.filter((item) => item && typeof item.id === "string" && item.id).map((item) => item.id))].sort(),
-    action_input_signal_socket_ids: [...new Set(sockets.filter((item) => item && item.kind === "signal" && item.dir === "in" && typeof item.id === "string" && item.id).map((item) => item.id))].sort()
+    form_hints_include: [...facts.form_hints_include].sort(),
+    readout_logic_vars: [...facts.readout_logic_vars].sort(),
+    control_param_ids: [...facts.control_param_ids].sort(),
+    action_input_signal_socket_ids: [...facts.action_input_signal_socket_ids].sort()
   };
 }
 
@@ -133,7 +174,7 @@ function resolveInterfaceTargetProof(dependency, candidate, targetBinding, runti
     };
   }
 
-  const facts = targetFacts(resolvedTile);
+  const facts = targetFacts(resolvedTile, runtime, stagedWorld);
   const missing = {};
   for (const field of Object.keys(requiredSets)) {
     const have = new Set(facts[field] || []);
@@ -427,7 +468,7 @@ function materializeKit(assemblyResult, runtime, options = {}) {
     dependency_resolution: dependencyResolution.receipts,
     runtime_contract: contract,
     evidence: [
-      { kind: "DEPENDENCY_CLOSURE", status: "PASS", check: "every dependency was either deterministically discharged against isolated staged MorphTile matter or materialization would have HELD" },
+      { kind: "DEPENDENCY_CLOSURE", status: "PASS", check: "every dependency was either deterministically discharged against isolated staged MorphTile matter, including exact declared capability grants resolved by the runtime contract, or materialization would have HELD" },
       { kind: "TILE", status: "PASS", check: "assembly candidate materialized and validateTile accepted it" },
       { kind: "KIT_HASH", status: "PASS", check: "kit expect.sha256 uses the supplied MorphTile runtime hashOf over tile + defs + words; Assembly provenance, warnings and discharged-proof receipts remain sidecars outside portable content identity" },
       { kind: "KIT_IMPORT", status: "PASS", check: "fresh-world importKit returned READY without overwrite or partial mode" }

@@ -42,6 +42,8 @@ The new receiver proof combines one complete compatible tile from current merged
 
 This is Assembly integration/evidence only. It does not grant Assembly ownership of Form sizing, Surface material vocabulary, Capability state, Interface layout semantics, or MorphTile runtime behavior.
 
+A separate metadata-integrity regression now asserts that the runtime-exported Assembly identity, `machine.json`, and `package.json` report one exact version. It exposed that runtime `MACHINE.version` had remained at `0.6.3` after the 0.6.4 manifest/package promotion; the candidate repairs that single source identity to `0.6.4` rather than allowing provenance envelopes to advertise a stale machine version.
+
 ## Reusable rules learned
 
 **Authorship must be established before transport can transform it.** Serialization is not validation.
@@ -56,17 +58,18 @@ This is Assembly integration/evidence only. It does not grant Assembly ownership
 
 **Historical exact receipts stay historical.** When a newer merged producer changes semantics, add a separately pinned receiver proof instead of relabelling an older exact-revision test as if it covered the new producer.
 
+**Machine identity is provenance.** Runtime result metadata, machine manifest and package identity must not disagree about the version that produced an Assembly candidate or HOLD.
+
 **Merged sibling growth becomes evidence, not automatic authority.** Assembly may re-prove exact merged producer behavior while still HOLDing schemas or semantics it has not explicitly proven.
 
 ## Placement decision
 
-The new round-8 proof belongs in Assembly because it answers whether compatible outputs from several independently owned creation machines survive combination into one complete portable tile/kit and still retain their exact meaning after fresh-world import. No new universal MorphTile representation/runtime gap was exposed by this pass, so no core candidate is justified.
+The new round-8 proof belongs in Assembly because it answers whether compatible outputs from several independently owned creation machines survive combination into one complete portable tile/kit and still retain their exact meaning after fresh-world import. The version-identity repair also belongs in Assembly because it is the machine's own provenance metadata. No new universal MorphTile representation/runtime gap was exposed by this pass, so no core candidate is justified.
 
 ## HELD / open
 
-- The round-8 portable-composition candidate needs exact-head CI and independent Verification before Creation Director integration.
+- The round-8 portable-composition and version-identity candidate needs exact-head CI and independent Verification before Creation Director integration.
 - Open Form #21, Surface #19 and Interface #16 remain candidate-only evidence and are not treated as integrated authority by this lane.
-- `src/index.js` still reports Assembly runtime machine version `0.6.3` while `machine.json`, `package.json` and this status report `0.6.4`; this metadata mismatch is explicitly HELD and must be repaired with a bounded source edit before claiming metadata-consistent 0.6.4 output envelopes.
 - No automatic conflict winner or priority policy for incompatible candidate, word, definition or dependency variants.
 - Assembly does not invent, fetch or synthesize missing definitions, dependencies, `ui_panel` eligibility, target identity or parent/world context.
 - External or contextual dependencies not present in the portable kit remain HOLD.

@@ -327,6 +327,54 @@ function collectWorldRequirements(request, inputs, holds) {
   return Object.keys(out).length ? out : null;
 }
 
+function addRecipeDefinitionRefs(parts, refs) {
+  for (const part of parts || []) {
+    if (!part || typeof part !== "object" || Array.isArray(part)) continue;
+    if (typeof part.use === "string" && part.use) refs.add(part.use);
+    if (Array.isArray(part.body)) addRecipeDefinitionRefs(part.body, refs);
+  }
+}
+
+function addMatterDefinitionRefs(matter, refs) {
+  if (!matter || typeof matter !== "object" || Array.isArray(matter)) return;
+  const mesh = matter.facets && matter.facets.mesh;
+  if (mesh && mesh.type === "generated" && mesh.data && mesh.data.generator === "recipe") {
+    addRecipeDefinitionRefs(mesh.data.parts, refs);
+  }
+  for (const capability of matter.capabilities || []) {
+    const def = capability && capability.grants_ref && capability.grants_ref.def;
+    if (typeof def === "string" && def) refs.add(def);
+  }
+}
+
+function inspectDefinitionClosure(candidate, worldRequirements) {
+  const definitions = (worldRequirements && worldRequirements.definitions) || {};
+  const pending = new Set();
+  addMatterDefinitionRefs(candidate, pending);
+  const required = new Set();
+  const missing = new Set();
+
+  while (pending.size) {
+    const id = Array.from(pending).sort()[0];
+    pending.delete(id);
+    if (required.has(id)) continue;
+    required.add(id);
+    const definition = definitions[id];
+    if (!definition || typeof definition !== "object" || Array.isArray(definition)) {
+      missing.add(id);
+      continue;
+    }
+    const nested = new Set();
+    addMatterDefinitionRefs(definition.body || {}, nested);
+    for (const nestedId of nested) if (!required.has(nestedId)) pending.add(nestedId);
+  }
+
+  return {
+    required: Array.from(required).sort(),
+    missing: Array.from(missing).sort()
+  };
+}
+
 function collectSourceProvenance(inputs) {
   return inputs.map((input, index) => {
     const candidate = candidateOf(input) || {};
@@ -366,8 +414,17 @@ function run(request) {
   });
   const dependencies = collectDependencies(request, inputs, holds);
   const worldRequirements = collectWorldRequirements(request, inputs, holds);
+  const definitionClosure = inspectDefinitionClosure(assembled, worldRequirements);
   const sourceProvenance = collectSourceProvenance(inputs);
 
+  if (definitionClosure.missing.length) {
+    holds.push({
+      code: "HOLD_DEFINITION_CLOSURE_INCOMPLETE",
+      missing: definitionClosure.missing,
+      required: definitionClosure.required,
+      detail: "Assembled MorphTile matter references definitions that are absent from the declared world-requirement closure; Assembly will not claim a complete candidate until those definitions are supplied."
+    });
+  }
   if (foldedInterfaceMatter && !assembled.form_hints.includes("ui_panel")) {
     holds.push({
       code: "HOLD_VIEW_TARGET_FORM_MISSING",
@@ -386,11 +443,12 @@ function run(request) {
     return result(request, MACHINE, "HOLD", {
       dependencies,
       world_requirements: worldRequirements,
+      required_definitions: definitionClosure.required,
       source_provenance: sourceProvenance,
       held_candidates: heldCandidates,
       warnings,
       holds,
-      evidence: [{ kind: "INPUTS", status: "PASS", check: "input envelopes, upstream HOLDs/warnings, unsupported candidates, addressed operation boundaries, and all conflicting variants/sources remain inspectable and are not promoted without proof" }]
+      evidence: [{ kind: "INPUTS", status: "PASS", check: "input envelopes, upstream HOLDs/warnings, unsupported candidates, addressed operation boundaries, definition closure, and all conflicting variants/sources remain inspectable and are not promoted without proof" }]
     });
   }
 
@@ -399,15 +457,16 @@ function run(request) {
     candidate: assembled,
     dependencies,
     world_requirements: worldRequirements,
+    required_definitions: definitionClosure.required,
     source_provenance: sourceProvenance,
     closure_hash: hash,
     warnings,
     evidence: [
       { kind: "ASSEMBLY", status: "PASS", check: "deterministic compatible candidate union without overwrite; proven Interface view and presentation operations are folded only when target identity matches and ui_panel eligibility already exists" },
-      { kind: "CLOSURE", status: "PASS", check: "request/input dependency and world-requirement closure plus source provenance and upstream warnings are preserved without silent replacement" },
-      { kind: "HASH", status: "PASS", check: "candidate + dependencies + world requirements are bound by canonical SHA-256; provenance/evidence/warnings are intentionally outside content identity" }
+      { kind: "CLOSURE", status: "PASS", check: "request/input dependency and world-requirement closure plus source provenance and upstream warnings are preserved; direct and transitive MorphTile definition references are present before completion is claimed" },
+      { kind: "HASH", status: "PASS", check: "candidate + dependencies + world requirements are bound by canonical SHA-256; derived requirement indexes, provenance/evidence/warnings are intentionally outside content identity" }
     ]
   });
 }
 
-module.exports = { MACHINE, canonical, sha256Canonical, closureHash, resolveAssemblyId, run };
+module.exports = { MACHINE, canonical, sha256Canonical, closureHash, inspectDefinitionClosure, resolveAssemblyId, run };

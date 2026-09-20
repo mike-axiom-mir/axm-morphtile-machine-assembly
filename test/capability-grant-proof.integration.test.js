@@ -7,7 +7,7 @@ const { materializeKit, resolveInterfaceTargetProof } = require("../src/kit");
 
 const corePath = process.env.MORPHTILE_CORE_PATH;
 const coreCommit = process.env.MORPHTILE_COMMIT;
-const EXPECTED_CORE = "43a9eccf831a49aedc169a5ce0b6701e22ae4cc3";
+const EXPECTED_CORE = "2bdf8eade1376055473b9cc1b11734b72a5566e5";
 
 function sleepingCandidate(socketDir = "in") {
   return {

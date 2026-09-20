@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.6.0 — 2026-09-20
+
+- Added fail-closed compatibility for the exact Interface Machine v0.5 transport schemas `morphtile.view-operation/v0.5` and `morphtile.interface-operations/v0.5` without accepting arbitrary future Interface schemas.
+- Preserved nested `row` / `group` view matter as ordinary MorphTile view content instead of interpreting or flattening Interface-owned layout semantics inside Assembly.
+- Kept target identity, `ui_panel` eligibility, unknown-field, operation-count, presentation-shape and conflict boundaries unchanged.
+- Added exact candidate-head integration evidence against Interface `5dd11a33ed15a86f995fc47333c3822d94f5ec68` and MorphTile `ef2b3c6986aa1a333247feffc43a8443f17239d0`, including kit materialization and fresh-world import.
+- Kept Interface v0.6 and other unproven schemas explicit HOLDs.
+
 ## 0.5.1 — 2026-09-20
 
 - Made Assembly HOLD reports lossless for candidate, word, and definition conflicts by preserving both exact competing values and their source lanes.

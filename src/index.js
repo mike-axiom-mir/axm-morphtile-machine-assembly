@@ -343,8 +343,13 @@ function collectDependencies(request, inputs, holds) {
 
 function mergeNamed(target, source, kind, sourceLabel, sources, holds) {
   for (const name of Object.keys(source || {}).sort()) {
-    if (!(name in target)) {
-      target[name] = clone(source[name]);
+    if (!hasOwn(target, name)) {
+      Object.defineProperty(target, name, {
+        value: clone(source[name]),
+        enumerable: true,
+        configurable: true,
+        writable: true
+      });
       sources.set(name, sourceLabel);
       continue;
     }

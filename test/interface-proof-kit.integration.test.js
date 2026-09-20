@@ -11,7 +11,7 @@ const interfaceCommit = process.env.INTERFACE_PROOF_COMMIT;
 const capabilityPath = process.env.CAPABILITY_MACHINE_PATH;
 const runtimePath = process.env.MORPHTILE_CORE_PATH;
 const EXPECTED_INTERFACE_COMMIT = "0e47cd09d613c6c934cd7adbdb6c7a18eeaaf6ed";
-const EXPECTED_MORPHTILE_COMMIT = "429a344f7d9333bef01cf9de1c292c3af09abec2";
+const EXPECTED_MORPHTILE_COMMIT = "43a9eccf831a49aedc169a5ce0b6701e22ae4cc3";
 
 const MT = runtimePath ? require(runtimePath) : null;
 const authorInterface = interfacePath ? require(path.resolve(interfacePath)).run : null;

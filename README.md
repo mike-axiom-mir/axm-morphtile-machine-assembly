@@ -83,19 +83,29 @@ Arbitrary Assembly dependency records are not representable in the current Morph
 
 See `KIT_MATERIALIZATION.md`.
 
-## Pinned integration lane
+## Pinned integration lanes
 
-Current CI pins exact integrated revisions of:
+The workflow keeps historical exact receipts historical and adds a separate round-8 receiver lane rather than relabelling old tests as coverage of newer producer revisions.
 
-- Form Machine: `ec3072738d9b5ab371a62852132dd6c14af09d5a`
-- Surface Machine: `ac8e551fb9e8ba266024fcbca473b8491996ea63`
-- Capability Machine: `0e0f60eb477d8cb20f8dbe259f546fa7c5b36e24`
-- Interface Machine: `260e45599c91cbcb0ec8a5a54153323e4e5d0c6a`
-- MorphTile core: `ef2b3c6986aa1a333247feffc43a8443f17239d0`
+Historical exact lane used by the existing integration regressions:
 
-These test-time checkouts are evidence only; sibling repositories and MorphTile core are not runtime dependencies of Assembly.
+- Form Machine: `bd67179e2aebd20708b02152d07752b37df16e66`
+- Surface Machine: `67599d08938c8aac236dfa1421c25856f4b962ba`
+- Capability Machine: `edc07af182ee26ca1ceb64b5d5205591ec6aca9d`
+- Interface Machine: `271fbf2abe6fc214d30076b9417655f084221eac`
+- MorphTile core: `2bdf8eade1376055473b9cc1b11734b72a5566e5`
 
-When a sibling contract is integrated or MorphTile core moves, Assembly must re-earn compatibility against the new exact heads rather than infer it.
+Round-8 portable-composition lane:
+
+- Form Machine: `33625a6e98cdeb985635e0cdcfd5c754ad8505fe`
+- Surface Machine: `536a745ddea4d996d0daf193649db939fe3ade83`
+- Capability Machine: `edc07af182ee26ca1ceb64b5d5205591ec6aca9d`
+- Interface Machine: `3f29f98b4125fe3376f02aabc509dc3da610deae`
+- MorphTile core: `2bdf8eade1376055473b9cc1b11734b72a5566e5`
+
+These checkouts are evidence only; sibling repositories and MorphTile core are not runtime dependencies of Assembly. `STATUS.md` records newer merged ecosystem heads separately from the exact revisions a given receiver proof actually exercised.
+
+When a sibling contract is integrated or MorphTile core moves, Assembly must re-earn compatibility against the new exact heads rather than infer it. An unmerged sibling candidate is inspectable evidence, never automatic authority.
 
 ## Run
 
@@ -107,11 +117,11 @@ Node 18 or later; zero third-party runtime dependencies; no secrets or network r
 
 ## Truth boundary
 
-- IMPLEMENTED ON MAIN: deterministic tile/facet/capability folding, fail-closed upstream-envelope handling, request/input closure collection, source provenance, upstream-warning preservation, canonical closure hashing, exact addressed Interface view/presentation folding, schema gating, and runtime-backed MorphTile kit materialization.
-- CANDIDATE IN v0.5.1: lossless conflict evidence; deterministic direct/transitive definition-closure proof; kit-side source-trace preservation.
-- PINNED TEST HARNESS: four integrated sibling machines plus MorphTile v0.4 are checked out at exact commits in CI and exercised together, including a current Form definition-reference path through verified kit import.
+- IMPLEMENTED ON MAIN: deterministic tile/facet/capability folding, fail-closed upstream-envelope handling, request/input closure collection, source provenance, upstream-warning preservation, canonical closure hashing, exact addressed Interface view/presentation folding, schema gating, source-integrity preflight, lossless conflict evidence, named own-key world closure, and runtime-backed MorphTile kit materialization.
+- CANDIDATE ON THE CURRENT BRANCH/PR: generic candidate-object own-key merge hardening for inherited-looking key names. This remains unintegrated until independent Verification and Creation Director merge.
+- PINNED TEST HARNESS: historical exact sibling receipts plus a separately pinned round-8 portable-composition lane and MorphTile v0.4 receiver are checked out in CI.
 - EXPERIMENTAL: envelope v0.1, `world_requirements`, `required_definitions`, `source_provenance`, `held_candidates`, `closure_hash`, and candidate schemas in this repository.
-- NOT CLAIMED: compatibility outside pinned revisions, arbitrary operation composition, automatic definition discovery/fetch, automatic `ui_panel` invention, visual quality, automatic CANON, or merge authority.
+- NOT CLAIMED: compatibility outside pinned revisions, arbitrary new MorphTile facet vocabulary, arbitrary operation composition, automatic definition discovery/fetch, automatic `ui_panel` invention, visual quality, automatic CANON, or merge authority.
 - HELD: arbitrary dependency transport through MorphTile kits and any conflict auto-resolution policy.
 
 This is candidate machinery, not automatic canon and not evidence that MorphTile can autonomously manufacture MorphTile.

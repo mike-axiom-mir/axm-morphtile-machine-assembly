@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased — 2026-09-21
+
+- Generic Assembly candidate-object merging now decides identity from authored own keys rather than JavaScript prototype-chain membership.
+- New candidate keys are inserted as explicit own data properties, so `__proto__`, `constructor`, and `toString` cannot be confused with inherited host properties or trigger the legacy `__proto__` setter.
+- Equal authored values still deduplicate deterministically; true same-own-key disagreement still returns `HOLD_ASSEMBLY_CONFLICT` with both source lanes and both exact variants.
+- Added fail-first regressions for inherited-looking facet names and their conflict evidence. This is Assembly merge behavior only; it does not claim new MorphTile facet vocabulary or CANON status.
+
 ## 0.6.2 — 2026-09-20
 
 - Added the bounded MorphTile full-path grammar for proven Interface v0.4/v0.5 operation targets while keeping assembled tile `id` as a one-segment local identity.

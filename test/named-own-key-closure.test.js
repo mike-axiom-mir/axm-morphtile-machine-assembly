@@ -113,6 +113,7 @@ integrationTest("own-key definition closure survives Assembly kit materializatio
   const receiver = MorphTile.createWorld("Own-key closure receiver");
   const imported = MorphTile.importKit(receiver, JSON.parse(JSON.stringify(materialized.kit)));
   assert.equal(imported.status, "READY", JSON.stringify(imported));
+  for (const operation of imported.ops || []) MorphTile.applyStructOp(receiver, operation);
   const tile = MorphTile.resolveTile(receiver, "mt_own_key_closure");
   assert.ok(tile);
   const compiled = MorphTile.compileMesh(tile, receiver);

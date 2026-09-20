@@ -2,6 +2,7 @@
 
 const { clone } = require("./envelope");
 const { inspectWorldRequirementIdentities } = require("./index");
+const { PortableDataError, clonePortableValue } = require("./portable");
 
 const INTERFACE_TARGET_PROOF = "morphtile.interface-target-proof/v0.1";
 const PRESENTATION_ANCHOR_PROOF = "morphtile.presentation-anchor-proof/v0.1";
@@ -34,6 +35,25 @@ function hold(code, detail, fields = {}) {
     evidence: clone(fields.evidence || []),
     holds: [{ code, detail, ...clone(fields.hold || {}) }]
   };
+}
+
+function kitPortableHold(error, trace = {}) {
+  const code = error.code === "HOLD_ASSEMBLY_INPUT_NONFINITE_VALUE"
+    ? "HOLD_KIT_INPUT_NONFINITE_VALUE"
+    : "HOLD_KIT_INPUT_NONPORTABLE_VALUE";
+  return hold(code, "Kit materialization input cannot be preserved exactly by the portable MorphTile transport boundary.", {
+    ...trace,
+    hold: {
+      path: error.path,
+      source_code: error.code,
+      source_detail: error.message
+    },
+    evidence: [{
+      kind: "KIT_INPUT_PORTABILITY",
+      status: "HOLD",
+      check: "Assembly result/options were inspected without invoking serialization hooks or accessors before kit translation"
+    }]
+  });
 }
 
 function runtimeContract(runtime, shell) {
@@ -339,8 +359,30 @@ function resolveKitDependencies(assemblyResult, runtime, stagedWorld) {
 }
 
 function materializeKit(assemblyResult, runtime, options = {}) {
+  if (!assemblyResult || typeof assemblyResult !== "object" || Array.isArray(assemblyResult)) {
+    return hold("HOLD_ASSEMBLY_RESULT_NOT_CANDIDATE", "A MorphTile kit may only be materialized from a successful Assembly Machine candidate.");
+  }
+
+  let portableAssemblyResult;
+  try {
+    portableAssemblyResult = clonePortableValue(assemblyResult, "assembly_result");
+  } catch (error) {
+    if (error instanceof PortableDataError) return kitPortableHold(error);
+    throw error;
+  }
+  assemblyResult = portableAssemblyResult;
   const trace = sourceTrace(assemblyResult);
-  if (!assemblyResult || assemblyResult.status !== "CANDIDATE" || !assemblyResult.candidate) {
+
+  let portableOptions;
+  try {
+    portableOptions = clonePortableValue(options == null ? {} : options, "options");
+  } catch (error) {
+    if (error instanceof PortableDataError) return kitPortableHold(error, trace);
+    throw error;
+  }
+  options = portableOptions;
+
+  if (assemblyResult.status !== "CANDIDATE" || !assemblyResult.candidate) {
     return hold("HOLD_ASSEMBLY_RESULT_NOT_CANDIDATE", "A MorphTile kit may only be materialized from a successful Assembly Machine candidate.", trace);
   }
 

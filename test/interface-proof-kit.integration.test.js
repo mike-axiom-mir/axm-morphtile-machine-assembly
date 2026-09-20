@@ -10,8 +10,8 @@ const interfacePath = process.env.INTERFACE_PROOF_MACHINE_PATH;
 const interfaceCommit = process.env.INTERFACE_PROOF_COMMIT;
 const capabilityPath = process.env.CAPABILITY_MACHINE_PATH;
 const runtimePath = process.env.MORPHTILE_CORE_PATH;
-const EXPECTED_INTERFACE_COMMIT = "b3eb923d64ebd81f58abb5ccd4052557f04f5b5a";
-const EXPECTED_MORPHTILE_COMMIT = "ef2b3c6986aa1a333247feffc43a8443f17239d0";
+const EXPECTED_INTERFACE_COMMIT = "bc4b6196b0a0f8a6df39c71cdd8db22c1f787f83";
+const EXPECTED_MORPHTILE_COMMIT = "429a344f7d9333bef01cf9de1c292c3af09abec2";
 
 const MT = runtimePath ? require(runtimePath) : null;
 const authorInterface = interfacePath ? require(path.resolve(interfacePath)).run : null;
@@ -82,8 +82,8 @@ function applyImported(receiver, imported) {
 }
 
 test("exact Interface target proof is discharged against staged MorphTile matter before kit export", { skip: !MT || !authorInterface || !authorCapability }, () => {
-  assert.equal(interfaceCommit, EXPECTED_INTERFACE_COMMIT, "CI Interface proof checkout must match the exact reviewed candidate head");
-  assert.equal(process.env.MORPHTILE_COMMIT, EXPECTED_MORPHTILE_COMMIT, "CI MorphTile checkout must match the exact proven runtime head");
+  assert.equal(interfaceCommit, EXPECTED_INTERFACE_COMMIT, "CI Interface proof checkout must match the exact integrated Interface head");
+  assert.equal(process.env.MORPHTILE_COMMIT, EXPECTED_MORPHTILE_COMMIT, "CI MorphTile checkout must match the exact current runtime head");
 
   const interfaceOut = interfaceOutput();
   const capabilityOut = capabilityOutput();
@@ -123,7 +123,7 @@ test("exact Interface target proof is discharged against staged MorphTile matter
 });
 
 test("known target proof that staged MorphTile matter does not satisfy HOLDS instead of disappearing during kit export", { skip: !MT || !authorInterface }, () => {
-  assert.equal(interfaceCommit, EXPECTED_INTERFACE_COMMIT, "CI Interface proof checkout must match the exact reviewed candidate head");
+  assert.equal(interfaceCommit, EXPECTED_INTERFACE_COMMIT, "CI Interface proof checkout must match the exact integrated Interface head");
   const interfaceOut = interfaceOutput();
   const assembled = assembleInputs([uiTile(), interfaceOut], "assembly-proof-kit-incomplete");
   assert.equal(assembled.status, "CANDIDATE", JSON.stringify(assembled.holds));
@@ -142,7 +142,7 @@ test("known target proof that staged MorphTile matter does not satisfy HOLDS ins
 });
 
 test("explicit nested target binding cannot be upgraded into portable existence proof when parent context is outside the kit", { skip: !MT || !authorInterface || !authorCapability }, () => {
-  assert.equal(interfaceCommit, EXPECTED_INTERFACE_COMMIT, "CI Interface proof checkout must match the exact reviewed candidate head");
+  assert.equal(interfaceCommit, EXPECTED_INTERFACE_COMMIT, "CI Interface proof checkout must match the exact integrated Interface head");
   const nestedPath = "mt_shell/mt_panel";
   const interfaceOut = interfaceOutput(nestedPath);
   const capabilityOut = capabilityOutput();
@@ -165,7 +165,7 @@ test("explicit nested target binding cannot be upgraded into portable existence 
 });
 
 test("tile presentation anchor proof is discharged only when the exact anchor exists in staged kit matter", { skip: !MT || !authorInterface || !authorCapability }, () => {
-  assert.equal(interfaceCommit, EXPECTED_INTERFACE_COMMIT, "CI Interface proof checkout must match the exact reviewed candidate head");
+  assert.equal(interfaceCommit, EXPECTED_INTERFACE_COMMIT, "CI Interface proof checkout must match the exact integrated Interface head");
   const interfaceOut = interfaceOutput("mt_panel", { mode: "tile", anchor: "mt_panel", user_adjustable: false });
   const capabilityOut = capabilityOutput();
   assert.equal(interfaceOut.status, "CANDIDATE", JSON.stringify(interfaceOut.holds));
@@ -197,7 +197,7 @@ test("tile presentation anchor proof is discharged only when the exact anchor ex
 });
 
 test("presentation anchor outside staged kit matter remains an explicit HOLD", { skip: !MT || !authorInterface || !authorCapability }, () => {
-  assert.equal(interfaceCommit, EXPECTED_INTERFACE_COMMIT, "CI Interface proof checkout must match the exact reviewed candidate head");
+  assert.equal(interfaceCommit, EXPECTED_INTERFACE_COMMIT, "CI Interface proof checkout must match the exact integrated Interface head");
   const interfaceOut = interfaceOutput("mt_panel", { mode: "tile", anchor: "mt_shell/mt_mount", user_adjustable: false });
   const capabilityOut = capabilityOutput();
   const assembled = assembleInputs([uiTile(), capabilityOut, interfaceOut], "assembly-proof-kit-external-anchor");

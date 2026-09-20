@@ -58,7 +58,7 @@ test("current sibling mains expose the ui_panel boundary and assemble the proven
   for (const output of [form, surface, capability, interfaceOut]) {
     assert.equal(output.status, "CANDIDATE", JSON.stringify(output.holds));
   }
-  assert.equal(interfaceOut.candidate.schema, "morphtile.interface-operations/v0.4");
+  assert.equal(interfaceOut.candidate.schema, "morphtile.interface-operations/v0.5");
   assert.deepEqual(interfaceOut.candidate.operations.map((operation) => operation.op), ["view.set", "presentation.set"]);
   assert.equal(interfaceOut.warnings.some((warning) => warning.code === "TARGET_MUST_EXIST_AND_DECLARE_UI_PANEL"), true);
 

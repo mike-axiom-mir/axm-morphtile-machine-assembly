@@ -3,7 +3,7 @@
 - Foundation version: 0.5.1 candidate
 - State: CANDIDATE — EXACT-HEAD CI REQUIRED
 - Local/CI test command: `npm test`
-- MorphTile runtime target: v0.4 at `a579182ae585e5722ac87dd0cc8209963b18d000`
+- MorphTile runtime target: v0.4 at `b6b086edb70fd4657495fcf01cb9fcdedceafdaf`
 - Envelope: provisional v0.1
 - Visual proof: none
 
@@ -23,14 +23,19 @@
 
 ## Added in this candidate
 
-- Generic candidate conflicts now preserve the exact competing values and their input sources in `HOLD_ASSEMBLY_CONFLICT`, not only the conflicting path.
-- Word and definition conflicts now preserve both meanings plus both source lanes, matching the already lossless dependency-conflict pattern.
+- Generic candidate conflicts preserve the exact competing values and their input sources in `HOLD_ASSEMBLY_CONFLICT`, not only the conflicting path.
+- Word and definition conflicts preserve both meanings plus both source lanes, matching the already lossless dependency-conflict pattern.
 - First-seen values remain deterministic in the held closure, but rejected alternatives remain inspectable; a HOLD never pretends one variant won.
-- Added exact regressions for candidate, word, and definition conflict evidence.
+- Exact regressions cover candidate, word, and definition conflict evidence.
+- The integration lane is re-pinned to integrated Form `574e0dd348942507685f2892bdebbf2fb5170a03`, Surface `ac8e551fb9e8ba266024fcbca473b8491996ea63`, Capability `0e0f60eb477d8cb20f8dbe259f546fa7c5b36e24`, Interface `260e45599c91cbcb0ec8a5a54153323e4e5d0c6a`, and MorphTile core `b6b086edb70fd4657495fcf01cb9fcdedceafdaf`.
 
 ## Placement decision
 
 These rules belong in Assembly Machine, not MorphTile core. MorphTile owns representation/runtime contracts; Assembly owns combining machine outputs and must preserve enough evidence to explain why incompatible matter could not be combined.
+
+## Evidence boundary
+
+Current compatibility is earned only if the exact updated Assembly candidate head passes CI with all five pinned integrated inputs above. No compatibility is inferred from earlier green runs on superseded pins.
 
 ## HELD / open
 
@@ -40,5 +45,3 @@ These rules belong in Assembly Machine, not MorphTile core. MorphTile owns repre
 - No transport of arbitrary dependency records through the current MorphTile kit format.
 - No compatibility claim beyond exact pinned sibling/core revisions exercised by CI.
 - No visual-quality proof, automatic CANON, or merge authority.
-
-Current sibling candidate lanes such as Form definition reuse, ordered Interface bodies, widened Capability wake vocabulary, and Surface repair remain external until integrated/re-proved; Assembly does not consume unmerged sibling work as if canonical.

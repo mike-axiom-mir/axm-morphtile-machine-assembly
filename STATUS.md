@@ -26,12 +26,16 @@
 - Generic candidate conflicts preserve the exact competing values and their input sources in `HOLD_ASSEMBLY_CONFLICT`, not only the conflicting path.
 - Word and definition conflicts preserve both meanings plus both source lanes, matching the already lossless dependency-conflict pattern.
 - First-seen values remain deterministic in the held closure, but rejected alternatives remain inspectable; a HOLD never pretends one variant won.
-- Exact regressions cover candidate, word, and definition conflict evidence.
-- The integration lane is re-pinned to integrated Form `574e0dd348942507685f2892bdebbf2fb5170a03`, Surface `ac8e551fb9e8ba266024fcbca473b8491996ea63`, Capability `0e0f60eb477d8cb20f8dbe259f546fa7c5b36e24`, Interface `260e45599c91cbcb0ec8a5a54153323e4e5d0c6a`, and MorphTile core `b6b086edb70fd4657495fcf01cb9fcdedceafdaf`.
+- Direct and transitive MorphTile definition references in generated recipe matter and capability `grants_ref` are discovered deterministically. Missing referenced definitions now produce `HOLD_DEFINITION_CLOSURE_INCOMPLETE` instead of a false complete candidate.
+- `required_definitions` is exposed as derived deterministic envelope metadata; it does not create a second content identity.
+- Kit materialization preserves `source_closure_hash`, `source_provenance`, and `source_warnings` on both candidate and HOLD outputs while keeping those transport/history sidecars outside MorphTile kit content identity.
+- Exact regressions cover candidate/word/definition conflict evidence, direct/transitive definition closure, capability definition references, source-trace preservation, and provenance-vs-content hash separation.
+- A real current Form v0.5 definition-reference output is exercised through Assembly HOLD/completion and real MorphTile kit materialization/import.
+- The integration lane is pinned to integrated Form `574e0dd348942507685f2892bdebbf2fb5170a03`, Surface `ac8e551fb9e8ba266024fcbca473b8491996ea63`, Capability `0e0f60eb477d8cb20f8dbe259f546fa7c5b36e24`, Interface `260e45599c91cbcb0ec8a5a54153323e4e5d0c6a`, and MorphTile core `b6b086edb70fd4657495fcf01cb9fcdedceafdaf`.
 
 ## Placement decision
 
-These rules belong in Assembly Machine, not MorphTile core. MorphTile owns representation/runtime contracts; Assembly owns combining machine outputs and must preserve enough evidence to explain why incompatible matter could not be combined.
+These rules belong in Assembly Machine, not MorphTile core. MorphTile already owns reusable definitions, recipe `use`, runtime resolution, `needsOf`, portable kits, and hash/import verification. Assembly owns deciding whether the creation-side closure is complete before claiming assembly success, and must preserve source trace when translating that closure into a kit.
 
 ## Evidence boundary
 
@@ -40,6 +44,7 @@ Current compatibility is earned only if the exact updated Assembly candidate hea
 ## HELD / open
 
 - No auto-resolution or priority policy for incompatible candidate, word, definition, or dependency variants.
+- Definition discovery is intentionally bounded to MorphTile v0.4 generated-recipe `use` references and capability `grants_ref.def`; Assembly does not invent or fetch missing definitions.
 - No arbitrary Interface operation composition beyond explicitly proven contracts.
 - No invented `ui_panel` eligibility or target identity.
 - No transport of arbitrary dependency records through the current MorphTile kit format.

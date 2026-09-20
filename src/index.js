@@ -3,8 +3,9 @@
 const { createHash } = require("node:crypto");
 const { assertRequest, clone, result } = require("./envelope");
 const { isTilePath, pathLeaf, parseInterfaceOperations } = require("./interface-operations");
+const { PortableDataError, clonePortableValue, safeRequestId } = require("./portable");
 
-const MACHINE = { id: "axm.morphtile.machine.assembly", version: "0.6.2" };
+const MACHINE = { id: "axm.morphtile.machine.assembly", version: "0.6.3" };
 const SUPPORTED_SCHEMAS = new Set([
   "morphtile.tile-spec/v0.4",
   "morphtile.facet-candidate/v0.4",
@@ -464,7 +465,33 @@ function collectSourceProvenance(inputs) {
   });
 }
 
+function portableInputHold(request, error) {
+  const safeRequest = {
+    envelope_version: "0.1",
+    request_id: safeRequestId(request) || "assembly-nonportable-input",
+    goal: "Reject non-portable Assembly input before transport",
+    provenance: {}
+  };
+  return result(safeRequest, MACHINE, "HOLD", {
+    holds: [error.toHold()],
+    provenance: {},
+    evidence: [{
+      kind: "INPUT_PORTABILITY",
+      status: "HOLD",
+      check: "caller-authored Assembly request data is rejected before JSON serialization can invoke hooks or rewrite/drop values"
+    }]
+  });
+}
+
 function run(request) {
+  let portableRequest;
+  try {
+    portableRequest = clonePortableValue(request, "request");
+  } catch (error) {
+    if (error instanceof PortableDataError) return portableInputHold(request, error);
+    throw error;
+  }
+  request = portableRequest;
   assertRequest(request);
   const inputs = request.inputs || [];
   if (!inputs.length) {

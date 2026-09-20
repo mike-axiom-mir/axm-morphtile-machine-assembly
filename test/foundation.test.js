@@ -101,3 +101,48 @@ test("canonical comparison accepts semantically equal object key order", () => {
   const out = run(reordered);
   assert.equal(out.status, "CANDIDATE");
 });
+
+test("binds candidate closure with an order-invariant canonical sha256", () => {
+  const first = JSON.parse(JSON.stringify(request));
+  first.request_id = "hash-first";
+  first.dependencies = [{ id: "surface-lib", ref: "commit-a", meta: { b: 2, a: 1 } }];
+  first.inputs[0].world_requirements = {
+    words: { pulse: { name: "pulse", args: [], body: ["+", 1, 2] } }
+  };
+
+  const second = JSON.parse(JSON.stringify(first));
+  second.request_id = "hash-second";
+  second.dependencies = [{ meta: { a: 1, b: 2 }, ref: "commit-a", id: "surface-lib" }];
+  second.inputs[0].world_requirements = {
+    words: { pulse: { body: ["+", 1, 2], args: [], name: "pulse" } }
+  };
+
+  const a = run(first), b = run(second);
+  assert.equal(a.status, "CANDIDATE");
+  assert.equal(b.status, "CANDIDATE");
+  assert.match(a.closure_hash.value, /^[0-9a-f]{64}$/);
+  assert.deepEqual(a.closure_hash, b.closure_hash);
+  assert.equal(a.closure_hash.algorithm, "sha256");
+  assert.equal(a.closure_hash.scope, "candidate+dependencies+world_requirements");
+});
+
+test("closure hash changes on content mutation but not provenance-only mutation", () => {
+  const base = JSON.parse(JSON.stringify(request));
+  base.request_id = "hash-base";
+  base.dependencies = [{ id: "surface-lib", ref: "commit-a" }];
+  base.inputs[0].world_requirements = {
+    definitions: { shape: { id: "shape", body: { kind: "box" } } }
+  };
+
+  const provenanceOnly = JSON.parse(JSON.stringify(base));
+  provenanceOnly.request_id = "hash-provenance";
+  provenanceOnly.inputs[0].provenance = { note: "different source annotation" };
+
+  const changed = JSON.parse(JSON.stringify(base));
+  changed.request_id = "hash-content";
+  changed.inputs[0].world_requirements.definitions.shape.body.kind = "sphere";
+
+  const a = run(base), b = run(provenanceOnly), c = run(changed);
+  assert.equal(a.closure_hash.value, b.closure_hash.value);
+  assert.notEqual(a.closure_hash.value, c.closure_hash.value);
+});

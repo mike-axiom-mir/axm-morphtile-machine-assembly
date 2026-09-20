@@ -1,7 +1,8 @@
 "use strict";
 
+const { createHash } = require("node:crypto");
 const { assertRequest, clone, result } = require("./envelope");
-const MACHINE = { id: "axm.morphtile.machine.assembly", version: "0.2.0" };
+const MACHINE = { id: "axm.morphtile.machine.assembly", version: "0.2.1" };
 const SUPPORTED_SCHEMAS = new Set([
   "morphtile.tile-spec/v0.4",
   "morphtile.facet-candidate/v0.4",
@@ -17,6 +18,23 @@ function canonical(value) {
 
 function same(a, b) {
   return canonical(a) === canonical(b);
+}
+
+function sha256Canonical(value) {
+  return createHash("sha256").update(canonical(value), "utf8").digest("hex");
+}
+
+function closureHash(candidate, dependencies, worldRequirements) {
+  return {
+    algorithm: "sha256",
+    canonicalization: "sorted-key-json/v1",
+    scope: "candidate+dependencies+world_requirements",
+    value: sha256Canonical({
+      candidate,
+      dependencies: dependencies || [],
+      world_requirements: worldRequirements || null
+    })
+  };
 }
 
 function mergeObject(target, source, path, conflicts) {
@@ -173,17 +191,20 @@ function run(request) {
     });
   }
 
+  const hash = closureHash(assembled, dependencies, worldRequirements);
   return result(request, MACHINE, "CANDIDATE", {
     candidate: assembled,
     dependencies,
     world_requirements: worldRequirements,
     source_provenance: sourceProvenance,
+    closure_hash: hash,
     warnings,
     evidence: [
       { kind: "ASSEMBLY", status: "PASS", check: "deterministic compatible candidate union without overwrite" },
-      { kind: "CLOSURE", status: "PASS", check: "dependency, world-requirement, and source-provenance closure preserved without silent replacement" }
+      { kind: "CLOSURE", status: "PASS", check: "dependency, world-requirement, and source-provenance closure preserved without silent replacement" },
+      { kind: "HASH", status: "PASS", check: "candidate + dependencies + world requirements are bound by canonical SHA-256; provenance/evidence are intentionally outside content identity" }
     ]
   });
 }
 
-module.exports = { MACHINE, run };
+module.exports = { MACHINE, canonical, sha256Canonical, closureHash, run };

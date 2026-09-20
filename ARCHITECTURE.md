@@ -2,12 +2,17 @@
 
 `src/index.js` reads explicit packets, clones accepted data, and never imports or writes sibling repositories.
 
-Assembly v0.2 separates two responsibilities:
+Assembly v0.2 separates three responsibilities:
 
 1. **candidate folding** — combine compatible tile/facet/capability matter into one `morphtile.tile-spec/v0.4` candidate;
-2. **closure preservation** — carry dependencies, world word/definition requirements, and source provenance alongside the candidate without applying them automatically.
+2. **closure preservation** — carry dependencies, world word/definition requirements, and source provenance alongside the candidate without applying them automatically;
+3. **content receipt** — bind the candidate + dependency closure + world requirements with canonical SHA-256 so later stages can detect semantic content drift before application.
 
 Conflicts are deterministic HOLDs. Candidate equality uses canonical structural comparison rather than object insertion order. Dependencies are deduplicated only when they have the same identity and the same complete content; same identity with different content HOLDS. World words and definitions use the same no-overwrite rule by name/id.
+
+`closure_hash` uses the same sorted-object-key canonicalization principle already present in MorphTile core and Verification Machine receipts. Arrays retain order; undefined object fields are omitted; object key insertion order is irrelevant. The hash scope is explicitly `candidate+dependencies+world_requirements`.
+
+Source provenance is intentionally not part of content identity. It remains attached as inspectable metadata so two semantically identical assemblies do not become different content merely because their source annotations or input request ids differ.
 
 `world_requirements` is sidecar data, not world mutation. Assembly does not issue `word.define`, `def.put`, or any canonical MorphTile change. A receiving project must explicitly validate and apply those operations through its normal authority path.
 

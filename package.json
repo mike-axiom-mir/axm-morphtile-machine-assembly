@@ -1,1 +1,1 @@
-{"name":"@axm/morphtile-machine-assembly","version":"0.2.0","private":false,"type":"commonjs","scripts":{"test":"node --test"},"engines":{"node":">=18"},"license":"LicenseRef-PolyForm-Noncommercial-1.0.0"}
+{"name":"@axm/morphtile-machine-assembly","version":"0.2.1","private":false,"type":"commonjs","scripts":{"test":"node --test"},"engines":{"node":">=18"},"license":"LicenseRef-PolyForm-Noncommercial-1.0.0"}

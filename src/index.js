@@ -5,7 +5,7 @@ const { assertRequest, clone, result } = require("./envelope");
 const { isTilePath, pathLeaf, parseInterfaceOperations } = require("./interface-operations");
 const { PortableDataError, clonePortableValue, safeRequestId } = require("./portable");
 
-const MACHINE = { id: "axm.morphtile.machine.assembly", version: "0.6.3" };
+const MACHINE = { id: "axm.morphtile.machine.assembly", version: "0.6.4" };
 const SUPPORTED_SCHEMAS = new Set([
   "morphtile.tile-spec/v0.4",
   "morphtile.facet-candidate/v0.4",

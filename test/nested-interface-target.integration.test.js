@@ -7,7 +7,11 @@ const { run: assemble } = require("../src");
 const { materializeKit } = require("../src/kit");
 
 const interfacePath = process.env.INTERFACE_NESTED_MACHINE_PATH;
+const interfaceCommit = process.env.INTERFACE_NESTED_COMMIT;
 const corePath = process.env.MORPHTILE_CORE_PATH;
+const coreCommit = process.env.MORPHTILE_COMMIT;
+const EXPECTED_INTERFACE_COMMIT = "bc4b6196b0a0f8a6df39c71cdd8db22c1f787f83";
+const EXPECTED_MORPHTILE_COMMIT = "429a344f7d9333bef01cf9de1c292c3af09abec2";
 const ready = Boolean(interfacePath && corePath);
 
 function req(id, goal, intent) {
@@ -44,7 +48,9 @@ function nestedInterface(Interface, placement) {
   ));
 }
 
-test("exact Interface v0.5.1 nested bundle requires explicit Assembly path binding and then survives kit transport", { skip: !ready }, () => {
+test("integrated nested Interface target requires explicit Assembly path binding and remains HELD at kit export when parent context is absent", { skip: !ready }, () => {
+  assert.equal(interfaceCommit, EXPECTED_INTERFACE_COMMIT, "CI nested Interface checkout must match the exact integrated Interface head");
+  assert.equal(coreCommit, EXPECTED_MORPHTILE_COMMIT, "CI MorphTile checkout must match the exact current runtime head");
   const Interface = require(path.resolve(interfacePath));
   const MT = require(path.resolve(corePath));
   const interfaceOut = nestedInterface(Interface, {
@@ -57,6 +63,7 @@ test("exact Interface v0.5.1 nested bundle requires explicit Assembly path bindi
   assert.equal(interfaceOut.status, "CANDIDATE", JSON.stringify(interfaceOut.holds));
   assert.equal(interfaceOut.candidate.schema, "morphtile.interface-operations/v0.5");
   assert.deepEqual(interfaceOut.candidate.operations.map((operation) => operation.id), ["mt_shell/mt_inner", "mt_shell/mt_inner"]);
+  assert.equal(interfaceOut.dependencies.some((dependency) => dependency.kind === "morphtile.interface-target-proof/v0.1"), true);
 
   const unbound = assemble({
     envelope_version: "0.1",
@@ -84,16 +91,18 @@ test("exact Interface v0.5.1 nested bundle requires explicit Assembly path bindi
   assert.deepEqual(combined.candidate.presentation, interfaceOut.candidate.operations[1].presentation);
 
   const kitResult = materializeKit(combined, MT, { name: "Nested Interface Assembly kit" });
-  assert.equal(kitResult.status, "CANDIDATE", JSON.stringify(kitResult.holds));
-  assert.deepEqual(kitResult.kit.tile.view, combined.candidate.view);
-  assert.deepEqual(kitResult.kit.tile.presentation, combined.candidate.presentation);
-
-  const receiver = MT.createWorld("Nested Interface Assembly receiver");
-  const imported = MT.importKit(receiver, JSON.parse(JSON.stringify(kitResult.kit)));
-  assert.equal(imported.status, "READY", JSON.stringify(imported));
+  assert.equal(kitResult.status, "HOLD");
+  assert.equal(kitResult.holds[0].code, "HOLD_KIT_DEPENDENCY_UNSATISFIED");
+  const targetReceipt = kitResult.dependency_resolution.find((receipt) => receipt.kind === "morphtile.interface-target-proof/v0.1");
+  assert.ok(targetReceipt);
+  assert.equal(targetReceipt.status, "UNSATISFIED");
+  assert.equal(targetReceipt.proof_scope, "staged_morphtile_world");
+  assert.match(targetReceipt.reasons[0], /not present in the isolated MorphTile staging world/);
+  assert.match(targetReceipt.reasons[0], /contextual parent matter is not part of this kit/);
 });
 
 test("exact Interface v0.5.1 nested view-only candidate follows the same explicit path boundary", { skip: !ready }, () => {
+  assert.equal(interfaceCommit, EXPECTED_INTERFACE_COMMIT, "CI nested Interface checkout must match the exact integrated Interface head");
   const Interface = require(path.resolve(interfacePath));
   const interfaceOut = nestedInterface(Interface, null);
   assert.equal(interfaceOut.status, "CANDIDATE", JSON.stringify(interfaceOut.holds));

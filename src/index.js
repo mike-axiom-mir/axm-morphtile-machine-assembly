@@ -2,12 +2,14 @@
 
 const { createHash } = require("node:crypto");
 const { assertRequest, clone, result } = require("./envelope");
-const MACHINE = { id: "axm.morphtile.machine.assembly", version: "0.4.0" };
+const { parseInterfaceOperations } = require("./interface-operations");
+const MACHINE = { id: "axm.morphtile.machine.assembly", version: "0.5.0" };
 const SUPPORTED_SCHEMAS = new Set([
   "morphtile.tile-spec/v0.4",
   "morphtile.facet-candidate/v0.4",
   "morphtile.capability-candidate/v0.4",
-  "morphtile.view-operation/v0.4"
+  "morphtile.view-operation/v0.4",
+  "morphtile.interface-operations/v0.4"
 ]);
 const TILE_ID = /^[A-Za-z0-9_-]+$/;
 const VIEW_CANDIDATE_KEYS = new Set(["schema", "operation"]);
@@ -191,6 +193,17 @@ function foldViewOperation(assembled, candidate, inputIndex, conflicts, holds) {
   return true;
 }
 
+function foldInterfaceOperations(assembled, candidate, inputIndex, conflicts, holds) {
+  const parsed = parseInterfaceOperations(assembled.id, candidate, inputIndex);
+  if (!parsed.ok) {
+    holds.push(...parsed.holds);
+    return false;
+  }
+  mergeObject(assembled, { view: parsed.view }, "", conflicts);
+  mergeObject(assembled, { presentation: parsed.presentation }, "", conflicts);
+  return true;
+}
+
 function mergeCandidate(assembled, input, inputIndex, conflicts, holds, warnings, heldCandidates) {
   preserveInputWarnings(input, inputIndex, warnings);
   if (!inspectInputEnvelope(input, inputIndex, holds)) return false;
@@ -202,7 +215,7 @@ function mergeCandidate(assembled, input, inputIndex, conflicts, holds, warnings
       code: "HOLD_UNASSEMBLABLE_CANDIDATE_SCHEMA",
       input: inputIndex,
       schema,
-      detail: "Assembly Machine only folds proven tile/facet/capability candidates and the exact stable view.set operation contract into a tile spec; other operation candidates remain explicit until proven."
+      detail: "Assembly Machine only folds proven tile/facet/capability candidates plus the exact stable Interface view.set and view.set+presentation.set contracts into a tile spec; other operation candidates remain explicit until proven."
     });
     heldCandidates.push({ input: inputIndex, schema, candidate: clone(candidate) });
     return false;
@@ -211,6 +224,9 @@ function mergeCandidate(assembled, input, inputIndex, conflicts, holds, warnings
 
   if (schema === "morphtile.view-operation/v0.4") {
     return foldViewOperation(assembled, candidate, inputIndex, conflicts, holds);
+  }
+  if (schema === "morphtile.interface-operations/v0.4") {
+    return foldInterfaceOperations(assembled, candidate, inputIndex, conflicts, holds);
   }
 
   mergeFormHints(assembled.form_hints, candidate.form_hints);
@@ -330,19 +346,19 @@ function run(request) {
   };
   if (assemblyId) assembled.id = assemblyId;
 
-  let foldedViewOperation = false;
+  let foldedInterfaceMatter = false;
   inputs.forEach((input, index) => {
-    if (mergeCandidate(assembled, input, index, conflicts, holds, warnings, heldCandidates)) foldedViewOperation = true;
+    if (mergeCandidate(assembled, input, index, conflicts, holds, warnings, heldCandidates)) foldedInterfaceMatter = true;
   });
   const dependencies = collectDependencies(request, inputs, holds);
   const worldRequirements = collectWorldRequirements(request, inputs, holds);
   const sourceProvenance = collectSourceProvenance(inputs);
 
-  if (foldedViewOperation && !assembled.form_hints.includes("ui_panel")) {
+  if (foldedInterfaceMatter && !assembled.form_hints.includes("ui_panel")) {
     holds.push({
       code: "HOLD_VIEW_TARGET_FORM_MISSING",
       required_form: "ui_panel",
-      detail: "The stable Interface view contract requires the assembled target to declare ui_panel; Assembly will not invent that form hint."
+      detail: "The proven Interface contracts require the assembled target to declare ui_panel; Assembly will not invent that form hint."
     });
   }
   if (conflicts.length) holds.push({ code: "HOLD_ASSEMBLY_CONFLICT", paths: Array.from(new Set(conflicts)).sort() });
@@ -367,7 +383,7 @@ function run(request) {
     closure_hash: hash,
     warnings,
     evidence: [
-      { kind: "ASSEMBLY", status: "PASS", check: "deterministic compatible candidate union without overwrite; proven view.set is folded only when target identity matches and ui_panel eligibility already exists" },
+      { kind: "ASSEMBLY", status: "PASS", check: "deterministic compatible candidate union without overwrite; proven Interface view and presentation operations are folded only when target identity matches and ui_panel eligibility already exists" },
       { kind: "CLOSURE", status: "PASS", check: "request/input dependency and world-requirement closure plus source provenance and upstream warnings are preserved without silent replacement" },
       { kind: "HASH", status: "PASS", check: "candidate + dependencies + world requirements are bound by canonical SHA-256; provenance/evidence/warnings are intentionally outside content identity" }
     ]

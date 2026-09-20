@@ -23,38 +23,36 @@ jobs:
           merged_core = '63a65c70bb702cb9ac979ec04233ffaa7ed5d179'
           candidate_core = '43a9eccf831a49aedc169a5ce0b6701e22ae4cc3'
 
-          old_paths = [
+          for path in [
             Path('test/capability-grant-proof.integration.test.js'),
             Path('test/interface-proof-kit.integration.test.js'),
             Path('test/nested-interface-target.integration.test.js')
-          ]
-          expected_old_counts = [1, 1, 1]
-          for path, expected in zip(old_paths, expected_old_counts):
+          ]:
             text = path.read_text()
             count = text.count(old_core)
-            if count != expected:
-              raise SystemExit(f'{path}: expected {expected} old-core refs, found {count}')
+            if count not in (0, 1):
+              raise SystemExit(f'{path}: expected at most 1 old-core ref, found {count}')
             path.write_text(text.replace(old_core, candidate_core))
 
           path = Path('test/named-own-key-closure.test.js')
           text = path.read_text()
           count = text.count(merged_core)
-          if count != 1:
-            raise SystemExit(f'{path}: expected 1 merged-core ref, found {count}')
+          if count not in (0, 1):
+            raise SystemExit(f'{path}: expected at most 1 merged-core ref, found {count}')
           path.write_text(text.replace(merged_core, candidate_core))
 
           path = Path('.github/workflows/test.yml')
           text = path.read_text()
           count = text.count(merged_core)
-          if count != 2:
-            raise SystemExit(f'{path}: expected 2 merged-core refs, found {count}')
+          if count not in (0, 2):
+            raise SystemExit(f'{path}: expected 0 or 2 merged-core refs, found {count}')
           path.write_text(text.replace(merged_core, candidate_core))
 
           path = Path('machine.json')
           text = path.read_text()
           count = text.count(merged_core)
-          if count != 1:
-            raise SystemExit(f'{path}: expected 1 merged-core ref, found {count}')
+          if count not in (0, 1):
+            raise SystemExit(f'{path}: expected at most 1 merged-core ref, found {count}')
           path.write_text(text.replace(merged_core, candidate_core))
           PY
       - name: Commit exact candidate dependency

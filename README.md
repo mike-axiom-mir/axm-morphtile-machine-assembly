@@ -40,7 +40,7 @@ A successful candidate carries `closure_hash` using SHA-256 over canonical sorte
 
 ## Definition closure
 
-Current Form v0.5 can intentionally emit MorphTile recipe `use` references without copying foreign definition bodies. Assembly now turns the repeated question “is everything this candidate refers to actually present?” into deterministic machine capability.
+Current Form v0.6 can intentionally emit MorphTile recipe `use` references without copying foreign definition bodies. Assembly turns the repeated question “is everything this candidate refers to actually present?” into deterministic machine capability.
 
 For MorphTile v0.4 matter it discovers:
 
@@ -77,7 +77,7 @@ The adapter uses MorphTile's own public `createTile`, `validateTile`, `createWor
 
 Assembly's `closure_hash` and MorphTile's `kit.expect.sha256` are intentionally separate receipts. The first identifies creation-side candidate closure; the second identifies MorphTile's portable kit payload.
 
-Materialization now carries Assembly `source_closure_hash`, `source_provenance`, and `source_warnings` on success and HOLD outputs. Those source-history sidecars remain outside the MorphTile kit payload hash, so changing provenance alone does not pretend the content changed.
+Materialization carries Assembly `source_closure_hash`, `source_provenance`, and `source_warnings` on success and HOLD outputs. Those source-history sidecars remain outside the MorphTile kit payload hash, so changing provenance alone does not pretend the content changed.
 
 Arbitrary Assembly dependency records are not representable in the current MorphTile kit shape, so any non-empty dependency closure causes `HOLD_KIT_DEPENDENCY_UNREPRESENTABLE` instead of silent loss.
 
@@ -87,11 +87,11 @@ See `KIT_MATERIALIZATION.md`.
 
 Current CI pins exact integrated revisions of:
 
-- Form Machine: `574e0dd348942507685f2892bdebbf2fb5170a03`
+- Form Machine: `ec3072738d9b5ab371a62852132dd6c14af09d5a`
 - Surface Machine: `ac8e551fb9e8ba266024fcbca473b8491996ea63`
 - Capability Machine: `0e0f60eb477d8cb20f8dbe259f546fa7c5b36e24`
 - Interface Machine: `260e45599c91cbcb0ec8a5a54153323e4e5d0c6a`
-- MorphTile core: `b6b086edb70fd4657495fcf01cb9fcdedceafdaf`
+- MorphTile core: `ef2b3c6986aa1a333247feffc43a8443f17239d0`
 
 These test-time checkouts are evidence only; sibling repositories and MorphTile core are not runtime dependencies of Assembly.
 

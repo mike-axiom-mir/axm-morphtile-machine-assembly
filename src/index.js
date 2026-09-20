@@ -4,7 +4,7 @@ const { createHash } = require("node:crypto");
 const { assertRequest, clone, result } = require("./envelope");
 const { parseInterfaceOperations } = require("./interface-operations");
 
-const MACHINE = { id: "axm.morphtile.machine.assembly", version: "0.6.0" };
+const MACHINE = { id: "axm.morphtile.machine.assembly", version: "0.6.1" };
 const SUPPORTED_SCHEMAS = new Set([
   "morphtile.tile-spec/v0.4",
   "morphtile.facet-candidate/v0.4",
@@ -345,6 +345,27 @@ function collectWorldRequirements(request, inputs, holds) {
   return Object.keys(out).length ? out : null;
 }
 
+function inspectWorldRequirementIdentities(worldRequirements) {
+  const holds = [];
+  const inspect = (kind, entries, embeddedField) => {
+    for (const identity of Object.keys(entries || {}).sort()) {
+      const value = entries[identity];
+      if (!value || typeof value !== "object" || Array.isArray(value) || !hasOwn(value, embeddedField)) continue;
+      if (value[embeddedField] === identity) continue;
+      holds.push({
+        code: kind === "word" ? "HOLD_WORD_IDENTITY_MISMATCH" : "HOLD_DEFINITION_IDENTITY_MISMATCH",
+        identity,
+        embedded_identity: clone(value[embeddedField]),
+        detail: "Named world-requirement map identity and embedded " + embeddedField + " disagree; Assembly will not rely on downstream normalization to silently rewrite identity."
+      });
+    }
+  };
+
+  inspect("word", worldRequirements && worldRequirements.words, "name");
+  inspect("definition", worldRequirements && worldRequirements.definitions, "id");
+  return holds;
+}
+
 function addRecipeDefinitionRefs(parts, refs) {
   for (const part of parts || []) {
     if (!part || typeof part !== "object" || Array.isArray(part)) continue;
@@ -437,6 +458,7 @@ function run(request) {
 
   const dependencies = collectDependencies(request, inputs, holds);
   const worldRequirements = collectWorldRequirements(request, inputs, holds);
+  holds.push(...inspectWorldRequirementIdentities(worldRequirements));
   const definitionClosure = inspectDefinitionClosure(assembled, worldRequirements);
   const sourceProvenance = collectSourceProvenance(inputs);
 
@@ -477,7 +499,7 @@ function run(request) {
       evidence: [{
         kind: "INPUTS",
         status: "PASS",
-        check: "input envelopes, upstream HOLDs/warnings, unsupported candidates, addressed operation boundaries, definition closure, and all conflicting variants/sources remain inspectable and are not promoted without proof"
+        check: "input envelopes, upstream HOLDs/warnings, unsupported candidates, addressed operation boundaries, named world-requirement identities, definition closure, and all conflicting variants/sources remain inspectable and are not promoted without proof"
       }]
     });
   }
@@ -500,7 +522,7 @@ function run(request) {
       {
         kind: "CLOSURE",
         status: "PASS",
-        check: "request/input dependency and world-requirement closure plus source provenance and upstream warnings are preserved; direct and transitive MorphTile definition references are present before completion is claimed"
+        check: "request/input dependency and world-requirement closure plus source provenance and upstream warnings are preserved; explicit word/definition identities agree with their map keys and direct/transitive definition references are present before completion is claimed"
       },
       {
         kind: "HASH",
@@ -516,6 +538,7 @@ module.exports = {
   canonical,
   sha256Canonical,
   closureHash,
+  inspectWorldRequirementIdentities,
   inspectDefinitionClosure,
   resolveAssemblyId,
   run

@@ -8,7 +8,7 @@ const formPath = process.env.FORM_MACHINE_PATH;
 const formCommit = process.env.FORM_COMMIT;
 const corePath = process.env.MORPHTILE_CORE_PATH;
 const ready = !!formPath && !!corePath;
-const EXPECTED_FORM_COMMIT = "9f43f9e3ffbaf1687419d90e7e8e3185092e48f5";
+const EXPECTED_FORM_COMMIT = "6adea73ea3a396aa60fc6207372ba7ea611c60fc";
 
 function req(id, intent) {
   return {
@@ -56,7 +56,7 @@ function applyImported(MT, receiver, imported) {
 }
 
 test("current Form definition references remain HOLD until Assembly receives complete definition closure, then survive verified kit import", { skip: !ready }, () => {
-  assert.equal(formCommit, EXPECTED_FORM_COMMIT, "CI Form checkout must match the exact merged v0.9 evidence head");
+  assert.equal(formCommit, EXPECTED_FORM_COMMIT, "CI Form checkout must match the exact merged Form 0.11 evidence head");
   const Form = require(path.resolve(formPath));
   const MT = require(path.resolve(corePath));
 
@@ -112,8 +112,8 @@ test("current Form definition references remain HOLD until Assembly receives com
   assert.equal(imported.ops.some((operation) => operation.op === "tile.add"), true);
 });
 
-test("Form v0.9 repeat setting progression remains definition-closed through Assembly kit transport and imported-world compile", { skip: !ready }, () => {
-  assert.equal(formCommit, EXPECTED_FORM_COMMIT, "CI Form checkout must match the exact merged v0.9 evidence head");
+test("Form repeat setting progression remains definition-closed through Assembly kit transport and imported-world compile", { skip: !ready }, () => {
+  assert.equal(formCommit, EXPECTED_FORM_COMMIT, "CI Form checkout must match the exact merged Form 0.11 evidence head");
   const Form = require(path.resolve(formPath));
   const MT = require(path.resolve(corePath));
 
@@ -153,7 +153,7 @@ test("Form v0.9 repeat setting progression remains definition-closed through Ass
   const complete = assemble({
     envelope_version: "0.1",
     request_id: "assembly-repeat-setting-progression-complete",
-    goal: "carry the exact Form v0.9 scoped progression together with its reusable definition closure",
+    goal: "carry the exact current Form scoped progression together with its reusable definition closure",
     intent: { id: "mt_progressive_panel", name: "Progressive panels" },
     inputs: [form],
     world_requirements: { definitions: { panel: panelDefinition() } }
@@ -181,4 +181,81 @@ test("Form v0.9 repeat setting progression remains definition-closed through Ass
   assert.equal(compiled.P.length, 54);
   assert.equal(compiled.T.length, 6);
   assert.deepEqual(planeWidthSpans(compiled, 3), [1, 2, 3], "Assembly transport must preserve the exact loop-scoped definition-setting progression");
+});
+
+test("Form 0.11 repeat rotation plus setting progression survives Assembly definition closure, kit transport and imported-world compile", { skip: !ready }, () => {
+  assert.equal(formCommit, EXPECTED_FORM_COMMIT, "CI Form checkout must match the exact merged Form 0.11 evidence head");
+  const Form = require(path.resolve(formPath));
+  const MT = require(path.resolve(corePath));
+
+  const form = Form.run(req("form-repeat-rotation-progression", {
+    name: "Turning progressive panels",
+    repeat: {
+      count: 3,
+      step: [3, 0, 0],
+      rot_step: [0, 0, 0.25],
+      with_step: { width: 0.5 },
+      instance: { use: "panel", with: { width: 1 }, rot: [0, 0, 0.1] }
+    }
+  }));
+  assert.equal(form.status, "CANDIDATE", JSON.stringify(form.holds));
+  assert.equal(form.machine.id, "axm.morphtile.machine.form");
+  assert.equal(form.warnings.some((warning) => warning.code === "DEFINITION_RUNTIME_RESOLUTION_REQUIRED"), true);
+
+  const expectedParts = [{
+    repeat: 3,
+    as: "i",
+    body: [{
+      use: "panel",
+      with: { width: ["+", 1, ["*", ["var", "i"], 0.5]] },
+      pos: [["+", 0, ["*", ["var", "i"], 3]], 0, 0],
+      rot: [0, 0, ["+", 0.1, ["*", ["var", "i"], 0.25]]]
+    }]
+  }];
+  assert.deepEqual(form.candidate.facets.mesh.data.parts, expectedParts);
+
+  const missing = assemble({
+    envelope_version: "0.1",
+    request_id: "assembly-repeat-rotation-progression-missing",
+    goal: "do not treat rotated reusable instances as closed when their definition is absent",
+    intent: { id: "mt_turning_progressive_panel", name: "Turning progressive panels" },
+    inputs: [form]
+  });
+  assert.equal(missing.status, "HOLD");
+  assert.deepEqual(missing.required_definitions, ["panel"]);
+  assert.deepEqual(missing.holds.find((hold) => hold.code === "HOLD_DEFINITION_CLOSURE_INCOMPLETE").missing, ["panel"]);
+
+  const complete = assemble({
+    envelope_version: "0.1",
+    request_id: "assembly-repeat-rotation-progression-complete",
+    goal: "carry Form 0.11 rotation and setting progression with explicit reusable-definition closure",
+    intent: { id: "mt_turning_progressive_panel", name: "Turning progressive panels" },
+    inputs: [form],
+    world_requirements: { definitions: { panel: panelDefinition() } }
+  });
+  assert.equal(complete.status, "CANDIDATE", JSON.stringify(complete.holds));
+  assert.deepEqual(complete.required_definitions, ["panel"]);
+  assert.deepEqual(complete.candidate.facets.mesh.data.parts, expectedParts);
+
+  const materialized = materializeKit(complete, MT, { name: "Turning progressive definition closure kit" });
+  assert.equal(materialized.status, "CANDIDATE", JSON.stringify(materialized.holds));
+  assert.equal(materialized.kit.expect.defs, 1);
+  assert.deepEqual(materialized.kit.tile.facets.mesh.data.parts, expectedParts);
+  assert.deepEqual(materialized.kit.defs.panel, panelDefinition());
+
+  const receiver = MT.createWorld("Turning progressive definition receiver");
+  const imported = MT.importKit(receiver, JSON.parse(JSON.stringify(materialized.kit)));
+  assert.equal(imported.status, "READY", JSON.stringify(imported));
+  assert.equal(imported.evidence, "verified_payload_sha256");
+  applyImported(MT, receiver, imported);
+
+  const received = MT.resolveTile(receiver, "mt_turning_progressive_panel");
+  assert.ok(received, "imported kit must resolve the transported rotating tile");
+  assert.deepEqual(received.facets.mesh.data.parts, expectedParts);
+
+  const compiled = MT.compileMesh(received, receiver);
+  assert.equal(compiled.hold, null, JSON.stringify(compiled));
+  assert.equal(compiled.recipe_parts, 3);
+  assert.equal(compiled.T.length, 6);
+  assert.equal(compiled.P.every((value) => Number.isFinite(value)), true);
 });

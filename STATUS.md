@@ -3,7 +3,7 @@
 - Foundation version: 0.5.1 candidate
 - State: CANDIDATE — EXACT-HEAD CI REQUIRED
 - Local/CI test command: `npm test`
-- MorphTile runtime target: v0.4 at `b6b086edb70fd4657495fcf01cb9fcdedceafdaf`
+- MorphTile runtime target: v0.4 at `ef2b3c6986aa1a333247feffc43a8443f17239d0`
 - Envelope: provisional v0.1
 - Visual proof: none
 
@@ -30,8 +30,8 @@
 - `required_definitions` is exposed as derived deterministic envelope metadata; it does not create a second content identity.
 - Kit materialization preserves `source_closure_hash`, `source_provenance`, and `source_warnings` on both candidate and HOLD outputs while keeping those transport/history sidecars outside MorphTile kit content identity.
 - Exact regressions cover candidate/word/definition conflict evidence, direct/transitive definition closure, capability definition references, source-trace preservation, and provenance-vs-content hash separation.
-- A real current Form v0.5 definition-reference output is exercised through Assembly HOLD/completion and real MorphTile kit materialization/import.
-- The integration lane is pinned to integrated Form `574e0dd348942507685f2892bdebbf2fb5170a03`, Surface `ac8e551fb9e8ba266024fcbca473b8491996ea63`, Capability `0e0f60eb477d8cb20f8dbe259f546fa7c5b36e24`, Interface `260e45599c91cbcb0ec8a5a54153323e4e5d0c6a`, and MorphTile core `b6b086edb70fd4657495fcf01cb9fcdedceafdaf`.
+- A real current Form v0.6 definition-reference output is exercised through Assembly HOLD/completion and real MorphTile kit materialization/import.
+- The integration lane is pinned to integrated Form `ec3072738d9b5ab371a62852132dd6c14af09d5a`, Surface `ac8e551fb9e8ba266024fcbca473b8491996ea63`, Capability `0e0f60eb477d8cb20f8dbe259f546fa7c5b36e24`, Interface `260e45599c91cbcb0ec8a5a54153323e4e5d0c6a`, and MorphTile core `ef2b3c6986aa1a333247feffc43a8443f17239d0`.
 
 ## Placement decision
 

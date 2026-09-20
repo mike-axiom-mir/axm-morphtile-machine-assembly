@@ -28,7 +28,7 @@ jobs:
             Path('test/interface-proof-kit.integration.test.js'),
             Path('test/nested-interface-target.integration.test.js')
           ]
-          expected_old_counts = [3, 1, 1]
+          expected_old_counts = [1, 1, 1]
           for path, expected in zip(old_paths, expected_old_counts):
             text = path.read_text()
             count = text.count(old_core)

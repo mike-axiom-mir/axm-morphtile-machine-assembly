@@ -60,8 +60,13 @@ function closureHash(candidate, dependencies, worldRequirements) {
 function mergeObject(target, source, path, conflicts, owners, sourceLabel) {
   for (const key of Object.keys(source || {}).sort()) {
     const at = path ? path + "." + key : key;
-    if (!(key in target)) {
-      target[key] = clone(source[key]);
+    if (!hasOwn(target, key)) {
+      Object.defineProperty(target, key, {
+        value: clone(source[key]),
+        enumerable: true,
+        configurable: true,
+        writable: true
+      });
       if (owners) owners.set(at, sourceLabel || null);
     } else if (!same(target[key], source[key])) {
       conflicts.push({

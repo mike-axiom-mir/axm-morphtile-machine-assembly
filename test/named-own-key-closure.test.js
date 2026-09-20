@@ -95,7 +95,7 @@ const runtimePath = process.env.MORPHTILE_CORE_PATH;
 const integrationTest = runtimePath ? test : test.skip;
 
 integrationTest("own-key definition closure survives Assembly kit materialization and fresh-world runtime use", () => {
-  assert.equal(process.env.MORPHTILE_COMMIT, "63a65c70bb702cb9ac979ec04233ffaa7ed5d179");
+  assert.equal(process.env.MORPHTILE_COMMIT, "43a9eccf831a49aedc169a5ce0b6701e22ae4cc3");
   const MorphTile = require(path.resolve(runtimePath));
   const input = request();
   delete input.world_requirements.words;

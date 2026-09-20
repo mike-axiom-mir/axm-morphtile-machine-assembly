@@ -11,7 +11,7 @@ const interfaceCommit = process.env.INTERFACE_NESTED_COMMIT;
 const corePath = process.env.MORPHTILE_CORE_PATH;
 const coreCommit = process.env.MORPHTILE_COMMIT;
 const EXPECTED_INTERFACE_COMMIT = "0e47cd09d613c6c934cd7adbdb6c7a18eeaaf6ed";
-const EXPECTED_MORPHTILE_COMMIT = "429a344f7d9333bef01cf9de1c292c3af09abec2";
+const EXPECTED_MORPHTILE_COMMIT = "43a9eccf831a49aedc169a5ce0b6701e22ae4cc3";
 const ready = Boolean(interfacePath && corePath);
 
 function req(id, goal, intent) {

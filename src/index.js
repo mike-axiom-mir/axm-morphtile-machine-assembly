@@ -2,7 +2,7 @@
 
 const { createHash } = require("node:crypto");
 const { assertRequest, clone, result } = require("./envelope");
-const MACHINE = { id: "axm.morphtile.machine.assembly", version: "0.2.1" };
+const MACHINE = { id: "axm.morphtile.machine.assembly", version: "0.3.0" };
 const SUPPORTED_SCHEMAS = new Set([
   "morphtile.tile-spec/v0.4",
   "morphtile.facet-candidate/v0.4",
@@ -49,22 +49,55 @@ function mergeFormHints(target, hints) {
   for (const hint of hints || []) if (!target.includes(hint)) target.push(hint);
 }
 
-function candidateOf(input) {
-  return input && input.candidate ? input.candidate : input;
+function hasOwn(value, key) {
+  return !!value && Object.prototype.hasOwnProperty.call(value, key);
 }
 
-function mergeCandidate(assembled, input, conflicts, holds, warnings) {
+function candidateOf(input) {
+  return hasOwn(input, "candidate") ? input.candidate : input;
+}
+
+function inspectInputEnvelope(input, inputIndex, holds) {
+  if (!input || typeof input !== "object" || Array.isArray(input) || !hasOwn(input, "status")) return true;
+
+  if (input.status !== "CANDIDATE") {
+    holds.push({
+      code: "HOLD_INPUT_NOT_CANDIDATE",
+      input: inputIndex,
+      status: input.status == null ? null : String(input.status),
+      upstream_holds: clone(input.holds || [])
+    });
+    return false;
+  }
+
+  if (!hasOwn(input, "candidate") || !input.candidate || typeof input.candidate !== "object" || Array.isArray(input.candidate)) {
+    holds.push({
+      code: "HOLD_INPUT_CANDIDATE_MISSING",
+      input: inputIndex,
+      detail: "An upstream CANDIDATE envelope must carry an object candidate."
+    });
+    return false;
+  }
+
+  return true;
+}
+
+function mergeCandidate(assembled, input, inputIndex, conflicts, holds, warnings, heldCandidates) {
+  if (!inspectInputEnvelope(input, inputIndex, holds)) return;
+
   const candidate = candidateOf(input) || {};
   const schema = candidate.schema || null;
   if (schema && !SUPPORTED_SCHEMAS.has(schema)) {
     holds.push({
       code: "HOLD_UNASSEMBLABLE_CANDIDATE_SCHEMA",
+      input: inputIndex,
       schema,
-      detail: "Assembly Machine only folds tile, facet, and capability candidates into a tile spec; operation bundles must remain explicit operations."
+      detail: "Assembly Machine only folds tile, facet, and capability candidates into a tile spec; operation candidates remain explicit until a proven assembly contract exists."
     });
+    heldCandidates.push({ input: inputIndex, schema, candidate: clone(candidate) });
     return;
   }
-  if (!schema) warnings.push({ code: "LEGACY_SCHEMALESS_FRAGMENT" });
+  if (!schema) warnings.push({ code: "LEGACY_SCHEMALESS_FRAGMENT", input: inputIndex });
 
   mergeFormHints(assembled.form_hints, candidate.form_hints);
 
@@ -116,7 +149,7 @@ function collectDependencies(request, inputs, holds) {
   return Array.from(seen.entries()).sort(([a], [b]) => a.localeCompare(b)).map(([, item]) => item.value);
 }
 
-function mergeNamed(target, source, kind, inputIndex, holds) {
+function mergeNamed(target, source, kind, sourceLabel, holds) {
   for (const name of Object.keys(source || {}).sort()) {
     if (!(name in target)) {
       target[name] = clone(source[name]);
@@ -126,19 +159,23 @@ function mergeNamed(target, source, kind, inputIndex, holds) {
       holds.push({
         code: kind === "word" ? "HOLD_WORD_CONFLICT" : "HOLD_DEFINITION_CONFLICT",
         identity: name,
-        source: "input[" + inputIndex + "]"
+        source: sourceLabel
       });
     }
   }
 }
 
-function collectWorldRequirements(inputs, holds) {
+function collectWorldRequirements(request, inputs, holds) {
   const words = {};
   const definitions = {};
+  const requestRequirements = request.world_requirements || {};
+  mergeNamed(words, requestRequirements.words || {}, "word", "request", holds);
+  mergeNamed(definitions, requestRequirements.definitions || requestRequirements.defs || {}, "definition", "request", holds);
+
   inputs.forEach((input, index) => {
     const req = (input && input.world_requirements) || {};
-    mergeNamed(words, req.words || {}, "word", index, holds);
-    mergeNamed(definitions, req.definitions || req.defs || {}, "definition", index, holds);
+    mergeNamed(words, req.words || {}, "word", "input[" + index + "]", holds);
+    mergeNamed(definitions, req.definitions || req.defs || {}, "definition", "input[" + index + "]", holds);
   });
   const out = {};
   if (Object.keys(words).length) out.words = words;
@@ -151,9 +188,10 @@ function collectSourceProvenance(inputs) {
     const candidate = candidateOf(input) || {};
     return {
       input: index,
+      status: input && hasOwn(input, "status") ? input.status : null,
       machine: input && input.machine ? clone(input.machine) : null,
       request_id: input && input.request_id ? input.request_id : null,
-      candidate_schema: candidate.schema || null,
+      candidate_schema: candidate && candidate.schema ? candidate.schema : null,
       provenance: input && input.provenance ? clone(input.provenance) : null
     };
   });
@@ -173,10 +211,11 @@ function run(request) {
   const conflicts = [];
   const holds = [];
   const warnings = [];
+  const heldCandidates = [];
 
-  for (const input of inputs) mergeCandidate(assembled, input, conflicts, holds, warnings);
+  inputs.forEach((input, index) => mergeCandidate(assembled, input, index, conflicts, holds, warnings, heldCandidates));
   const dependencies = collectDependencies(request, inputs, holds);
-  const worldRequirements = collectWorldRequirements(inputs, holds);
+  const worldRequirements = collectWorldRequirements(request, inputs, holds);
   const sourceProvenance = collectSourceProvenance(inputs);
 
   if (conflicts.length) holds.push({ code: "HOLD_ASSEMBLY_CONFLICT", paths: Array.from(new Set(conflicts)).sort() });
@@ -185,9 +224,10 @@ function run(request) {
       dependencies,
       world_requirements: worldRequirements,
       source_provenance: sourceProvenance,
+      held_candidates: heldCandidates,
       warnings,
       holds,
-      evidence: [{ kind: "INPUTS", status: "PASS", check: "inputs retained outside output and not mutated" }]
+      evidence: [{ kind: "INPUTS", status: "PASS", check: "input envelopes, upstream HOLDs, and unsupported candidates remain inspectable and are not promoted into assembly output" }]
     });
   }
 
@@ -201,7 +241,7 @@ function run(request) {
     warnings,
     evidence: [
       { kind: "ASSEMBLY", status: "PASS", check: "deterministic compatible candidate union without overwrite" },
-      { kind: "CLOSURE", status: "PASS", check: "dependency, world-requirement, and source-provenance closure preserved without silent replacement" },
+      { kind: "CLOSURE", status: "PASS", check: "request/input dependency and world-requirement closure plus source provenance are preserved without silent replacement" },
       { kind: "HASH", status: "PASS", check: "candidate + dependencies + world requirements are bound by canonical SHA-256; provenance/evidence are intentionally outside content identity" }
     ]
   });

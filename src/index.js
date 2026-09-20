@@ -3,7 +3,7 @@
 const { createHash } = require("node:crypto");
 const { assertRequest, clone, result } = require("./envelope");
 const { parseInterfaceOperations } = require("./interface-operations");
-const MACHINE = { id: "axm.morphtile.machine.assembly", version: "0.5.0" };
+const MACHINE = { id: "axm.morphtile.machine.assembly", version: "0.5.1" };
 const SUPPORTED_SCHEMAS = new Set([
   "morphtile.tile-spec/v0.4",
   "morphtile.facet-candidate/v0.4",
@@ -43,11 +43,19 @@ function closureHash(candidate, dependencies, worldRequirements) {
   };
 }
 
-function mergeObject(target, source, path, conflicts) {
+function mergeObject(target, source, path, conflicts, owners, sourceLabel) {
   for (const key of Object.keys(source || {}).sort()) {
     const at = path ? path + "." + key : key;
-    if (!(key in target)) target[key] = clone(source[key]);
-    else if (!same(target[key], source[key])) conflicts.push(at);
+    if (!(key in target)) {
+      target[key] = clone(source[key]);
+      if (owners) owners.set(at, sourceLabel || null);
+    } else if (!same(target[key], source[key])) {
+      conflicts.push({
+        path: at,
+        variants: [clone(target[key]), clone(source[key])],
+        sources: [owners && owners.has(at) ? owners.get(at) : "assembly-base", sourceLabel || null]
+      });
+    }
   }
 }
 
@@ -131,7 +139,7 @@ function resolveAssemblyId(request, inputs, holds) {
   return values[0] || null;
 }
 
-function foldViewOperation(assembled, candidate, inputIndex, conflicts, holds) {
+function foldViewOperation(assembled, candidate, inputIndex, conflicts, holds, owners) {
   const candidateUnknown = Object.keys(candidate).filter((key) => !VIEW_CANDIDATE_KEYS.has(key)).sort();
   if (candidateUnknown.length) {
     holds.push({
@@ -189,22 +197,22 @@ function foldViewOperation(assembled, candidate, inputIndex, conflicts, holds) {
     return false;
   }
 
-  mergeObject(assembled, { view: operation.view }, "", conflicts);
+  mergeObject(assembled, { view: operation.view }, "", conflicts, owners, "input[" + inputIndex + "]");
   return true;
 }
 
-function foldInterfaceOperations(assembled, candidate, inputIndex, conflicts, holds) {
+function foldInterfaceOperations(assembled, candidate, inputIndex, conflicts, holds, owners) {
   const parsed = parseInterfaceOperations(assembled.id, candidate, inputIndex);
   if (!parsed.ok) {
     holds.push(...parsed.holds);
     return false;
   }
-  mergeObject(assembled, { view: parsed.view }, "", conflicts);
-  mergeObject(assembled, { presentation: parsed.presentation }, "", conflicts);
+  mergeObject(assembled, { view: parsed.view }, "", conflicts, owners, "input[" + inputIndex + "]");
+  mergeObject(assembled, { presentation: parsed.presentation }, "", conflicts, owners, "input[" + inputIndex + "]");
   return true;
 }
 
-function mergeCandidate(assembled, input, inputIndex, conflicts, holds, warnings, heldCandidates) {
+function mergeCandidate(assembled, input, inputIndex, conflicts, holds, warnings, heldCandidates, owners) {
   preserveInputWarnings(input, inputIndex, warnings);
   if (!inspectInputEnvelope(input, inputIndex, holds)) return false;
 
@@ -223,22 +231,22 @@ function mergeCandidate(assembled, input, inputIndex, conflicts, holds, warnings
   if (!schema) warnings.push({ code: "LEGACY_SCHEMALESS_FRAGMENT", input: inputIndex });
 
   if (schema === "morphtile.view-operation/v0.4") {
-    return foldViewOperation(assembled, candidate, inputIndex, conflicts, holds);
+    return foldViewOperation(assembled, candidate, inputIndex, conflicts, holds, owners);
   }
   if (schema === "morphtile.interface-operations/v0.4") {
-    return foldInterfaceOperations(assembled, candidate, inputIndex, conflicts, holds);
+    return foldInterfaceOperations(assembled, candidate, inputIndex, conflicts, holds, owners);
   }
 
   mergeFormHints(assembled.form_hints, candidate.form_hints);
 
   if (schema === "morphtile.facet-candidate/v0.4" || (candidate.facet && Object.prototype.hasOwnProperty.call(candidate, "value"))) {
-    mergeObject(assembled.facets, { [candidate.facet]: candidate.value }, "facets", conflicts);
+    mergeObject(assembled.facets, { [candidate.facet]: candidate.value }, "facets", conflicts, owners, "input[" + inputIndex + "]");
     return false;
   }
 
-  mergeObject(assembled.facets, candidate.facets || {}, "facets", conflicts);
+  mergeObject(assembled.facets, candidate.facets || {}, "facets", conflicts, owners, "input[" + inputIndex + "]");
   for (const field of ["view", "presentation", "params", "capabilities"]) {
-    if (candidate[field] !== undefined) mergeObject(assembled, { [field]: candidate[field] }, "", conflicts);
+    if (candidate[field] !== undefined) mergeObject(assembled, { [field]: candidate[field] }, "", conflicts, owners, "input[" + inputIndex + "]");
   }
   return false;
 }
@@ -280,17 +288,20 @@ function collectDependencies(request, inputs, holds) {
   return Array.from(seen.entries()).sort(([a], [b]) => a.localeCompare(b)).map(([, item]) => item.value);
 }
 
-function mergeNamed(target, source, kind, sourceLabel, holds) {
+function mergeNamed(target, source, kind, sourceLabel, sources, holds) {
   for (const name of Object.keys(source || {}).sort()) {
     if (!(name in target)) {
       target[name] = clone(source[name]);
+      sources.set(name, sourceLabel);
       continue;
     }
     if (!same(target[name], source[name])) {
       holds.push({
         code: kind === "word" ? "HOLD_WORD_CONFLICT" : "HOLD_DEFINITION_CONFLICT",
         identity: name,
-        source: sourceLabel
+        source: sourceLabel,
+        variants: [clone(target[name]), clone(source[name])],
+        sources: [sources.get(name) || "unknown", sourceLabel]
       });
     }
   }
@@ -299,14 +310,16 @@ function mergeNamed(target, source, kind, sourceLabel, holds) {
 function collectWorldRequirements(request, inputs, holds) {
   const words = {};
   const definitions = {};
+  const wordSources = new Map();
+  const definitionSources = new Map();
   const requestRequirements = request.world_requirements || {};
-  mergeNamed(words, requestRequirements.words || {}, "word", "request", holds);
-  mergeNamed(definitions, requestRequirements.definitions || requestRequirements.defs || {}, "definition", "request", holds);
+  mergeNamed(words, requestRequirements.words || {}, "word", "request", wordSources, holds);
+  mergeNamed(definitions, requestRequirements.definitions || requestRequirements.defs || {}, "definition", "request", definitionSources, holds);
 
   inputs.forEach((input, index) => {
     const req = (input && input.world_requirements) || {};
-    mergeNamed(words, req.words || {}, "word", "input[" + index + "]", holds);
-    mergeNamed(definitions, req.definitions || req.defs || {}, "definition", "input[" + index + "]", holds);
+    mergeNamed(words, req.words || {}, "word", "input[" + index + "]", wordSources, holds);
+    mergeNamed(definitions, req.definitions || req.defs || {}, "definition", "input[" + index + "]", definitionSources, holds);
   });
   const out = {};
   if (Object.keys(words).length) out.words = words;
@@ -334,6 +347,7 @@ function run(request) {
   if (!inputs.length) return result(request, MACHINE, "HOLD", { holds: [{ code: "HOLD_NO_CANDIDATES" }] });
 
   const conflicts = [];
+  const conflictOwners = new Map();
   const holds = [];
   const warnings = [];
   const heldCandidates = [];
@@ -348,7 +362,7 @@ function run(request) {
 
   let foldedInterfaceMatter = false;
   inputs.forEach((input, index) => {
-    if (mergeCandidate(assembled, input, index, conflicts, holds, warnings, heldCandidates)) foldedInterfaceMatter = true;
+    if (mergeCandidate(assembled, input, index, conflicts, holds, warnings, heldCandidates, conflictOwners)) foldedInterfaceMatter = true;
   });
   const dependencies = collectDependencies(request, inputs, holds);
   const worldRequirements = collectWorldRequirements(request, inputs, holds);
@@ -361,7 +375,13 @@ function run(request) {
       detail: "The proven Interface contracts require the assembled target to declare ui_panel; Assembly will not invent that form hint."
     });
   }
-  if (conflicts.length) holds.push({ code: "HOLD_ASSEMBLY_CONFLICT", paths: Array.from(new Set(conflicts)).sort() });
+  if (conflicts.length) {
+    holds.push({
+      code: "HOLD_ASSEMBLY_CONFLICT",
+      paths: Array.from(new Set(conflicts.map((item) => item.path))).sort(),
+      conflicts: clone(conflicts)
+    });
+  }
   if (holds.length) {
     return result(request, MACHINE, "HOLD", {
       dependencies,
@@ -370,7 +390,7 @@ function run(request) {
       held_candidates: heldCandidates,
       warnings,
       holds,
-      evidence: [{ kind: "INPUTS", status: "PASS", check: "input envelopes, upstream HOLDs/warnings, unsupported candidates, and addressed operation boundaries remain inspectable and are not promoted without proof" }]
+      evidence: [{ kind: "INPUTS", status: "PASS", check: "input envelopes, upstream HOLDs/warnings, unsupported candidates, addressed operation boundaries, and all conflicting variants/sources remain inspectable and are not promoted without proof" }]
     });
   }
 

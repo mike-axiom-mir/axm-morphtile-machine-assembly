@@ -87,16 +87,16 @@ test("request-level world requirements conflict explicitly with sibling requirem
   assert.equal(hold.source, "input[0]");
 });
 
-test("unsupported operation bundles remain explicit inside HOLD output", () => {
+test("future unsupported operation bundles remain explicit inside HOLD output", () => {
   const request = copy(baseRequest);
-  request.request_id = "assembly-interface-operation-bundle-held";
+  request.request_id = "assembly-interface-future-operation-bundle-held";
   request.inputs.push({
     envelope_version: "0.1",
-    request_id: "interface-bundle-candidate",
+    request_id: "interface-future-bundle-candidate",
     status: "CANDIDATE",
-    machine: { id: "axm.morphtile.machine.interface", version: "0.2.0" },
+    machine: { id: "axm.morphtile.machine.interface", version: "future" },
     candidate: {
-      schema: "morphtile.interface-operations/v0.4",
+      schema: "morphtile.interface-operations/v0.5",
       operations: [
         { op: "view.set", id: "mt_counter", view: { title: "Counter", body: [{ value: "count" }] } },
         { op: "presentation.set", id: "mt_counter", presentation: { mode: "world" } }
@@ -108,7 +108,7 @@ test("unsupported operation bundles remain explicit inside HOLD output", () => {
   assert.equal(out.status, "HOLD");
   const hold = out.holds.find((item) => item.code === "HOLD_UNASSEMBLABLE_CANDIDATE_SCHEMA");
   assert.equal(hold.input, 2);
-  assert.equal(hold.schema, "morphtile.interface-operations/v0.4");
+  assert.equal(hold.schema, "morphtile.interface-operations/v0.5");
   assert.equal(out.held_candidates.length, 1);
   assert.deepEqual(out.held_candidates[0].candidate, request.inputs[2].candidate);
 });

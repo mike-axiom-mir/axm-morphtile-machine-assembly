@@ -20,14 +20,19 @@ function viewEnvelope(id = "mt_four_machine", view = { title: "Counter", body: [
     dependencies: [],
     world_requirements: null,
     evidence: [],
-    warnings: [],
+    warnings: [{ code: "TARGET_MUST_EXIST_AND_DECLARE_UI_PANEL" }],
     holds: [],
     provenance: { caller: "interface-fixture" }
   };
 }
 
-test("folds the exact stable view.set contract when target equals explicit assembly id", () => {
-  const request = copy(baseRequest);
+function declareUiPanel(request) {
+  request.inputs[0].candidate.form_hints.push("ui_panel");
+  return request;
+}
+
+test("folds the exact stable view.set contract when target equals explicit assembly id and ui_panel already exists", () => {
+  const request = declareUiPanel(copy(baseRequest));
   request.request_id = "assembly-view-fold";
   request.intent = { id: "mt_four_machine", name: "Four machine proof" };
   request.inputs.push(viewEnvelope());
@@ -37,10 +42,13 @@ test("folds the exact stable view.set contract when target equals explicit assem
   assert.equal(out.candidate.id, "mt_four_machine");
   assert.deepEqual(out.candidate.view, { title: "Counter", body: [{ value: "count" }] });
   assert.equal(out.source_provenance[2].candidate_schema, "morphtile.view-operation/v0.4");
+  const warning = out.warnings.find((item) => item.code === "UPSTREAM_WARNING" && item.input === 2);
+  assert.equal(warning.machine, "axm.morphtile.machine.interface");
+  assert.equal(warning.warning.code, "TARGET_MUST_EXIST_AND_DECLARE_UI_PANEL");
 });
 
 test("binds a view operation to a tile-spec id when the request does not repeat identity", () => {
-  const request = copy(baseRequest);
+  const request = declareUiPanel(copy(baseRequest));
   request.request_id = "assembly-view-tile-id";
   request.inputs[0].candidate.id = "mt_four_machine";
   request.inputs.push(viewEnvelope());
@@ -51,8 +59,22 @@ test("binds a view operation to a tile-spec id when the request does not repeat 
   assert.deepEqual(out.candidate.view, { title: "Counter", body: [{ value: "count" }] });
 });
 
-test("holds view operations when no assembled tile identity exists", () => {
+test("holds a correctly addressed view when compatible inputs never declared ui_panel", () => {
   const request = copy(baseRequest);
+  request.request_id = "assembly-view-form-missing";
+  request.intent = { id: "mt_four_machine", name: "Four machine proof" };
+  request.inputs.push(viewEnvelope());
+
+  const out = run(request);
+  assert.equal(out.status, "HOLD");
+  const hold = out.holds.find((item) => item.code === "HOLD_VIEW_TARGET_FORM_MISSING");
+  assert.equal(hold.required_form, "ui_panel");
+  const warning = out.warnings.find((item) => item.code === "UPSTREAM_WARNING");
+  assert.equal(warning.warning.code, "TARGET_MUST_EXIST_AND_DECLARE_UI_PANEL");
+});
+
+test("holds view operations when no assembled tile identity exists", () => {
+  const request = declareUiPanel(copy(baseRequest));
   request.request_id = "assembly-view-unbound";
   request.inputs.push(viewEnvelope());
 
@@ -63,7 +85,7 @@ test("holds view operations when no assembled tile identity exists", () => {
 });
 
 test("holds view operations addressed to another tile", () => {
-  const request = copy(baseRequest);
+  const request = declareUiPanel(copy(baseRequest));
   request.request_id = "assembly-view-mismatch";
   request.intent = { id: "mt_target", name: "Target" };
   request.inputs.push(viewEnvelope("mt_other"));
@@ -76,7 +98,7 @@ test("holds view operations addressed to another tile", () => {
 });
 
 test("holds conflicting tile identities before folding addressed operations", () => {
-  const request = copy(baseRequest);
+  const request = declareUiPanel(copy(baseRequest));
   request.request_id = "assembly-id-conflict";
   request.intent = { id: "mt_request", name: "Conflict" };
   request.inputs[0].candidate.id = "mt_form";
@@ -92,7 +114,7 @@ test("holds conflicting tile identities before folding addressed operations", ()
 });
 
 test("holds unknown view-operation fields instead of silently dropping future meaning", () => {
-  const request = copy(baseRequest);
+  const request = declareUiPanel(copy(baseRequest));
   request.request_id = "assembly-view-extra-field";
   request.intent = { id: "mt_four_machine", name: "Four machine proof" };
   const interfaceOut = viewEnvelope();
@@ -106,7 +128,7 @@ test("holds unknown view-operation fields instead of silently dropping future me
 });
 
 test("a pre-existing different tile view conflicts instead of being overwritten by view.set", () => {
-  const request = copy(baseRequest);
+  const request = declareUiPanel(copy(baseRequest));
   request.request_id = "assembly-view-conflict";
   request.intent = { id: "mt_four_machine", name: "Four machine proof" };
   request.inputs[0].candidate.view = { title: "Existing", body: [{ text: "keep me" }] };

@@ -7,18 +7,18 @@ const { run: assemble } = require("../src");
 const { materializeKit } = require("../src/kit");
 
 const paths = {
-  form: process.env.ROUND37_FORM_MACHINE_PATH,
-  surface: process.env.ROUND37_SURFACE_MACHINE_PATH,
-  capability: process.env.ROUND37_CAPABILITY_MACHINE_PATH,
-  interface: process.env.ROUND37_INTERFACE_MACHINE_PATH,
-  core: process.env.ROUND37_MORPHTILE_CORE_PATH
+  form: process.env.CURRENT_FORM_MACHINE_PATH,
+  surface: process.env.CURRENT_SURFACE_MACHINE_PATH,
+  capability: process.env.CURRENT_CAPABILITY_MACHINE_PATH,
+  interface: process.env.CURRENT_INTERFACE_MACHINE_PATH,
+  core: process.env.CURRENT_MORPHTILE_CORE_PATH
 };
 const commits = {
-  form: process.env.ROUND37_FORM_COMMIT,
-  surface: process.env.ROUND37_SURFACE_COMMIT,
-  capability: process.env.ROUND37_CAPABILITY_COMMIT,
-  interface: process.env.ROUND37_INTERFACE_COMMIT,
-  core: process.env.ROUND37_MORPHTILE_COMMIT
+  form: process.env.CURRENT_FORM_COMMIT,
+  surface: process.env.CURRENT_SURFACE_COMMIT,
+  capability: process.env.CURRENT_CAPABILITY_COMMIT,
+  interface: process.env.CURRENT_INTERFACE_COMMIT,
+  core: process.env.CURRENT_MORPHTILE_COMMIT
 };
 const expected = {
   form: "a13e495c61e911ef1382512b4532ddf26fdcc080",
@@ -35,7 +35,7 @@ function req(id, goal, intent) {
     request_id: id,
     goal,
     intent,
-    provenance: { caller: "assembly-round37-current-fleet" }
+    provenance: { caller: "assembly-current-fleet" }
   };
 }
 
@@ -48,15 +48,15 @@ function uiEligibility(id, name) {
       form_hints: ["ui_panel"],
       facets: {}
     },
-    provenance: { caller: "explicit-round37-ui-eligibility" }
+    provenance: { caller: "explicit-current-ui-eligibility" }
   };
 }
 
 function panelDefinition() {
   return {
     id: "panel",
-    name: "Round 37 transformed panel",
-    created_by: "assembly-round37-current-fleet",
+    name: "Current transformed panel",
+    created_by: "assembly-current-fleet",
     body: {
       facets: {
         mesh: {
@@ -85,16 +85,16 @@ function applyImported(MT, receiver, imported) {
 }
 
 test("current integrated fleet preserves Form repeat scale+rotation state through Assembly plan coverage and receiver closure", { skip: !ready }, () => {
-  assert.deepEqual(commits, expected, "round37 receiver proof must bind exact integrated producer/runtime identities");
+  assert.deepEqual(commits, expected, "current receiver proof must bind exact integrated producer/runtime identities");
 
   const Form = require(path.resolve(paths.form));
   const Surface = require(path.resolve(paths.surface));
   const Capability = require(path.resolve(paths.capability));
   const Interface = require(path.resolve(paths.interface));
   const MT = require(path.resolve(paths.core));
-  const id = "mt_round37_transform_panel";
+  const id = "mt_current_transform_panel";
 
-  const form = Form.run(req("round37-form-transform", "Create the integrated repeat scale+rotation definition form", {
+  const form = Form.run(req("current-form-transform", "Create the integrated repeat scale+rotation definition form", {
     repeat: {
       count: 3,
       step: [4, 0, 0],
@@ -108,16 +108,16 @@ test("current integrated fleet preserves Form repeat scale+rotation state throug
       }
     }
   }));
-  const surface = Surface.run(req("round37-surface", "Keep current base-only Surface authorship", {
+  const surface = Surface.run(req("current-surface", "Keep current base-only Surface authorship", {
     base_color: [0.16, 0.44, 0.7]
   }));
-  const capability = Capability.run(req("round37-capability", "Provide canonical count state for the current receiver proof", {
+  const capability = Capability.run(req("current-capability", "Provide canonical count state for the current receiver proof", {
     kind: "counter",
     initial: 3
   }));
-  const interfaceOut = Interface.run(req("round37-interface", "Render the current Interface repeat from canonical count", {
+  const interfaceOut = Interface.run(req("current-interface", "Render the current Interface repeat from canonical count", {
     tile_path: id,
-    title: "Round 37 transformed panel",
+    title: "Current transformed panel",
     elements: [{
       kind: "repeat",
       binding: "count",
@@ -144,12 +144,12 @@ test("current integrated fleet preserves Form repeat scale+rotation state throug
 
   const assembled = assemble({
     envelope_version: "0.1",
-    request_id: "assembly-round37-current-fleet",
+    request_id: "assembly-current-fleet",
     goal: "Re-earn exact current integrated producer semantics through complete Assembly transport and receiver closure",
-    intent: { id, name: "Round 37 transformed panel" },
-    inputs: [uiEligibility(id, "Round 37 transformed panel"), form, surface, capability, interfaceOut],
+    intent: { id, name: "Current transformed panel" },
+    inputs: [uiEligibility(id, "Current transformed panel"), form, surface, capability, interfaceOut],
     world_requirements: { definitions: { panel: panelDefinition() } },
-    provenance: { caller: "assembly-round37-current-fleet" }
+    provenance: { caller: "assembly-current-fleet" }
   });
 
   assert.equal(assembled.status, "CANDIDATE", JSON.stringify(assembled.holds));
@@ -161,7 +161,7 @@ test("current integrated fleet preserves Form repeat scale+rotation state throug
   assert.equal(assembled.candidate.facets.logic.data.vars.count, 3);
   assert.deepEqual(assembled.candidate.view, interfaceOut.candidate.operation.view);
 
-  const portable = materializeKit(assembled, MT, { name: "Round 37 current fleet portable kit" });
+  const portable = materializeKit(assembled, MT, { name: "Current fleet portable kit" });
   assert.equal(portable.status, "CANDIDATE", JSON.stringify(portable.holds));
   for (const kind of ["KIT_IMPORT_PLAN_COVERAGE", "KIT_APPLY", "KIT_RECEIVER_CLOSURE"]) {
     assert.equal(portable.evidence.some((entry) => entry.kind === kind && entry.status === "PASS"), true,
@@ -173,7 +173,7 @@ test("current integrated fleet preserves Form repeat scale+rotation state throug
   assert.equal(portable.dependency_resolution.length, 1);
   assert.equal(portable.dependency_resolution[0].status, "SATISFIED");
 
-  const receiver = MT.createWorld("Round 37 receiver");
+  const receiver = MT.createWorld("Current receiver");
   const imported = MT.importKit(receiver, JSON.parse(JSON.stringify(portable.kit)));
   assert.equal(imported.status, "READY", JSON.stringify(imported));
   assert.equal(imported.evidence, "verified_payload_sha256");

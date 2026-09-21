@@ -90,3 +90,29 @@ runtimeTest("kit materialization HOLDS when a READY plan installs the tile but s
   assert.deepEqual(materialized.holds[0].receiver_closure.missing.words, ["ease"]);
   assert.deepEqual(materialized.holds[0].receiver_closure.missing.tile, []);
 });
+
+runtimeTest("kit materialization HOLDS when a READY import plan omits declared kit matter", () => {
+  const MT = require(path.resolve(runtimePath));
+  const assembled = run(requestWithWords({
+    ease: { name: "ease", args: ["x"], body: ["var", "x"], note: "plan coverage proof" }
+  }));
+  assert.equal(assembled.status, "CANDIDATE", JSON.stringify(assembled.holds));
+
+  const incompletePlanner = Object.assign({}, MT, {
+    importKit(world, kit, opts) {
+      const checked = MT.importKit(world, kit, opts);
+      if (!checked || checked.status !== "READY") return checked;
+      return {
+        ...checked,
+        ops: checked.ops.filter((operation) => operation && operation.op !== "word.define")
+      };
+    }
+  });
+  const materialized = materializeKit(assembled, incompletePlanner, { name: "Incomplete READY plan must not count as a complete kit" });
+
+  assert.equal(materialized.status, "HOLD");
+  assert.equal(materialized.kit, null);
+  assert.equal(materialized.holds[0].code, "HOLD_KIT_RUNTIME_IMPORT_PLAN_INCOMPLETE");
+  assert.deepEqual(materialized.holds[0].plan_coverage.missing.words, ["ease"]);
+  assert.deepEqual(materialized.holds[0].plan_coverage.missing.tile, []);
+});

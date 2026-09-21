@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "test": "node --test test/upstream-envelope-identity.test.js test/source-provenance-presence.test.js"
+    "test": "node --test test/foundation.test.js test/input-closure.test.js test/preserialization-integrity.test.js test/proxy-source-integrity.test.js test/semantic-container-integrity.test.js test/semantic-discriminator-integrity.test.js test/candidate-schema-identity.test.js test/candidate-container-path-integrity.test.js test/provenance-presence.test.js test/request-own-key-integrity.test.js test/authored-name-hold-integrity.test.js test/world-requirement-identity.test.js"
   },
   "engines": {
     "node": ">=18"

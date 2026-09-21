@@ -284,6 +284,24 @@ function clonePortableValue(value, path = "value", stack = new Set()) {
       }
     }
 
+    // A status-less `{ candidate: ... }` entry is an Assembly compatibility
+    // wrapper, not an upstream result envelope. Validate its payload only after
+    // every authored sibling field has completed portable/semantic preflight so
+    // existing HOLD/warning/container evidence keeps its established precedence.
+    // Status-bearing envelopes retain `inspectInputEnvelope` authority instead.
+    if (
+      /^request\.inputs\[\d+\]$/.test(path) &&
+      Object.prototype.hasOwnProperty.call(out, "candidate") &&
+      !Object.prototype.hasOwnProperty.call(out, "status") &&
+      !isPlainRecord(out.candidate)
+    ) {
+      shapeError(
+        "HOLD_CANDIDATE_SHAPE_INVALID",
+        path + ".candidate",
+        "An authored candidate wrapper must contain a plain candidate map; null, arrays, and primitive values are not candidate omission."
+      );
+    }
+
     return out;
   } finally {
     stack.delete(value);

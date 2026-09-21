@@ -32,7 +32,7 @@ Assembly preserves:
 - source machine/request/provenance metadata;
 - upstream warnings as sourced `UPSTREAM_WARNING` records.
 
-Same-identity dependency drift and conflicting named words/definitions HOLD rather than selecting a winner. As of v0.5.1, HOLD reports also carry both exact competing variants and both source lanes. Generic candidate conflicts do the same for conflicting facet/view/presentation/parameter/capability matter.
+Same-identity dependency drift and conflicting named words/definitions HOLD rather than selecting a winner. HOLD reports carry both exact competing variants and both source lanes. Generic candidate conflicts do the same for conflicting facet/view/presentation/parameter/capability matter.
 
 The first-seen value remains in the held partial closure only to keep reporting deterministic; its presence is not acceptance or CANON. The competing value is preserved in the HOLD evidence.
 
@@ -40,7 +40,7 @@ A successful candidate carries `closure_hash` using SHA-256 over canonical sorte
 
 ## Definition closure
 
-Current Form v0.6 can intentionally emit MorphTile recipe `use` references without copying foreign definition bodies. Assembly turns the repeated question “is everything this candidate refers to actually present?” into deterministic machine capability.
+Current Form output can intentionally emit MorphTile recipe `use` references without copying foreign definition bodies. Assembly turns the repeated question “is everything this candidate refers to actually present?” into deterministic machine capability.
 
 For MorphTile v0.4 matter it discovers:
 
@@ -73,19 +73,19 @@ Assembly does **not** add `ui_panel` merely to make Interface output fit and doe
 
 `src/kit.js` can materialize a successful Assembly result through an explicitly supplied MorphTile runtime.
 
-The adapter uses MorphTile's own public `createTile`, `validateTile`, `createWorld`, `exportKit`, `importKit`, `hashOf`, and when available `needsOf` contracts. Declared words/definitions travel into the staging world and generated kit. The generated kit is accepted only after fresh-world `importKit` returns `READY`.
+The adapter uses MorphTile's own public `createTile`, `validateTile`, `createWorld`, `exportKit`, `importKit`, `hashOf`, `resolveTile`, and when available `needsOf`/`grantsOf` contracts. Declared words/definitions travel into the staging world and generated kit. The generated kit is accepted only after fresh-world `importKit` returns `READY`.
 
 Assembly's `closure_hash` and MorphTile's `kit.expect.sha256` are intentionally separate receipts. The first identifies creation-side candidate closure; the second identifies MorphTile's portable kit payload.
 
 Materialization carries Assembly `source_closure_hash`, `source_provenance`, and `source_warnings` on success and HOLD outputs. Those source-history sidecars remain outside the MorphTile kit payload hash, so changing provenance alone does not pretend the content changed.
 
-Arbitrary Assembly dependency records are not representable in the current MorphTile kit shape, so any non-empty dependency closure causes `HOLD_KIT_DEPENDENCY_UNREPRESENTABLE` instead of silent loss.
+Known local Interface target-proof and presentation-anchor dependencies can be deterministically discharged against isolated staged MorphTile matter. If a known proof is not actually satisfied, materialization returns `HOLD_KIT_DEPENDENCY_UNSATISFIED`. Other unresolved dependency records are not representable in the current MorphTile kit shape and return `HOLD_KIT_DEPENDENCY_UNREPRESENTABLE` instead of being silently dropped.
 
 See `KIT_MATERIALIZATION.md`.
 
 ## Pinned integration lanes
 
-The workflow keeps historical exact receipts historical and adds a separate round-8 receiver lane rather than relabelling old tests as coverage of newer producer revisions.
+The workflow keeps historical exact receipts historical. New producer/runtime integration is re-earned in separately pinned receiver lanes rather than retroactively relabelling older tests.
 
 Historical exact lane used by the existing integration regressions:
 
@@ -103,9 +103,25 @@ Round-8 portable-composition lane:
 - Interface Machine: `3f29f98b4125fe3376f02aabc509dc3da610deae`
 - MorphTile core: `2bdf8eade1376055473b9cc1b11734b72a5566e5`
 
-These checkouts are evidence only; sibling repositories and MorphTile core are not runtime dependencies of Assembly. `STATUS.md` records newer merged ecosystem heads separately from the exact revisions a given receiver proof actually exercised.
+Round-10 current-receiver lane:
 
-When a sibling contract is integrated or MorphTile core moves, Assembly must re-earn compatibility against the new exact heads rather than infer it. An unmerged sibling candidate is inspectable evidence, never automatic authority.
+- Form Machine: `378e7896acfdf8d4bd28d08127c1f57546e3eef1`
+- Surface Machine: `4349ba0d926aee1d36dde86fc7f69d04a58bf924`
+- Capability Machine: `edc07af182ee26ca1ceb64b5d5205591ec6aca9d`
+- Interface Machine: `1a941f8ff88ca590952571e3eeeeeeef6daefd77`
+- MorphTile core: `2bdf8eade1376055473b9cc1b11734b72a5566e5`
+
+Round-19 current-merged receiver candidate lane:
+
+- Form Machine: `dd6975f29390e3175642a7d510b3c5320415b620`
+- Surface Machine: `4e4495182aa83e5dfba37722fc3756a70cfaafaa`
+- Capability Machine: `edc07af182ee26ca1ceb64b5d5205591ec6aca9d`
+- Interface Machine: `8516da3a414c416ec1f76b1078901c56c49b04db`
+- MorphTile core: `2bdf8eade1376055473b9cc1b11734b72a5566e5`
+
+The round-19 receiver proof specifically checks that current Surface base-color-only authorship stays free of invented `paint`, current Interface repeat-local relational comparisons survive complete Assembly/kit transport and evaluate from lexical repeat scope, Capability `count=3` closes the Interface readout proof, current Form output compiles as finite geometry, and fresh-world rendering remains structurally read-only.
+
+These checkouts are evidence only; sibling repositories and MorphTile core are not runtime dependencies of Assembly. When a sibling contract is integrated or MorphTile core moves, Assembly must re-earn compatibility against the new exact heads rather than infer it. An unmerged sibling candidate is inspectable evidence, never automatic authority.
 
 ## Run
 
@@ -117,11 +133,11 @@ Node 18 or later; zero third-party runtime dependencies; no secrets or network r
 
 ## Truth boundary
 
-- IMPLEMENTED ON MAIN: deterministic tile/facet/capability folding, fail-closed upstream-envelope handling, request/input closure collection, source provenance, upstream-warning preservation, canonical closure hashing, exact addressed Interface view/presentation folding, schema gating, source-integrity preflight, lossless conflict evidence, named own-key world closure, and runtime-backed MorphTile kit materialization.
-- CANDIDATE ON THE CURRENT BRANCH/PR: generic candidate-object own-key merge hardening for inherited-looking key names. This remains unintegrated until independent Verification and Creation Director merge.
-- PINNED TEST HARNESS: historical exact sibling receipts plus a separately pinned round-8 portable-composition lane and MorphTile v0.4 receiver are checked out in CI.
+- IMPLEMENTED ON MAIN: deterministic tile/facet/capability folding, fail-closed upstream-envelope handling, exact request/intent grammar, semantic container validation, authored-presence source tracing, request/input closure collection, source provenance, upstream-warning preservation, canonical closure hashing, exact addressed Interface view/presentation folding, schema gating, source-integrity preflight, lossless conflict evidence, named own-key world closure, generic own-key candidate merge identity, and runtime-backed MorphTile kit materialization with bounded local Interface proof discharge.
+- CANDIDATE ON PR #33: separately pinned round-19 receiver evidence against exact current integrated Form/Surface/Capability/Interface/MorphTile heads. This candidate changes receiver evidence/documented truth, not Assembly runtime semantics.
+- PINNED TEST HARNESS: historical exact receipts plus separately pinned round-8, round-10, and round-19 receiver lanes are checked out in CI.
 - EXPERIMENTAL: envelope v0.1, `world_requirements`, `required_definitions`, `source_provenance`, `held_candidates`, `closure_hash`, and candidate schemas in this repository.
-- NOT CLAIMED: compatibility outside pinned revisions, arbitrary new MorphTile facet vocabulary, arbitrary operation composition, automatic definition discovery/fetch, automatic `ui_panel` invention, visual quality, automatic CANON, or merge authority.
-- HELD: arbitrary dependency transport through MorphTile kits and any conflict auto-resolution policy.
+- NOT CLAIMED: compatibility outside pinned revisions, unmerged sibling semantics, arbitrary new MorphTile facet vocabulary, arbitrary operation composition, automatic definition discovery/fetch, automatic `ui_panel` invention, visual quality, automatic CANON, or merge authority.
+- HELD: unresolved arbitrary dependency transport through MorphTile kits, any conflict auto-resolution policy, Interface #27 until its independent verification path is corrected/completed, and MorphTile core #17's separately owned repeat-text lexical-scope gap.
 
 This is candidate machinery, not automatic canon and not evidence that MorphTile can autonomously manufacture MorphTile.

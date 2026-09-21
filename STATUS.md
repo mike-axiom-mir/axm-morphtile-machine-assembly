@@ -1,6 +1,6 @@
 # Status
 
-- State: ROUND-22 CURRENT-FLEET RECEIVER EVIDENCE CANDIDATE — INTERMEDIATE PUSH GREEN; FINAL EXACT-HEAD + PR REPLAY + INDEPENDENT VERIFICATION REQUIRED
+- State: ROUND-22 CURRENT-FLEET RECEIVER EVIDENCE CANDIDATE — CURRENT-HEAD CI + INDEPENDENT VERIFICATION GATE
 - Test command: `npm test`
 - Assembly integrated main/base: `3a4af4417de21fff862bf309e3576c362bcac7f5` (through merged PR #34)
 - MorphTile integrated receiver: `2bdf8eade1376055473b9cc1b11734b72a5566e5`
@@ -47,7 +47,7 @@ The integrated fleet moved after round 19. The current exact receipt now pins:
 
 The new receiver proof specifically re-earns Form's integrated definition-setting grid position convergence through the entire consumer path. It asks current Form for a 2 x 1 x 3 definition grid whose active X/Z position expressions and X-only `width` setting progression are authored from the shared Form position kernel. Assembly must preserve the exact recipe leaf, close the explicit `panel` definition, combine current Surface/Capability/Interface matter, materialize a real MorphTile kit, import/apply it into a fresh world, preserve the exact leaf again, compile six finite concrete recipe parts, and render the current Interface repeat from canonical `count=3` without mutating receiver structure.
 
-Intermediate branch head `5ebe3483b1f56fba3420b8bb71d821fc99032ba8` passed Actions run `35596842221`, including the full `npm test` suite. Documentation commits move the candidate head after that evidence, so final exact-head push/PR replay is still required before exact-head green can be claimed.
+Intermediate branch head `5ebe3483b1f56fba3420b8bb71d821fc99032ba8` passed Actions run `35596842221`, including the full `npm test` suite. Candidate authority remains blocked unless the current exact head has green push and PR-triggered CI and independent Verification verifies that same head; CI success alone is evidence, not integration authority.
 
 This pass changes Assembly receiver evidence, CI pins and documented truth only. It does not change Assembly runtime semantics and does not grant Assembly ownership of Form geometry, Surface material vocabulary, Capability state, Interface semantics, or MorphTile runtime behavior.
 
@@ -81,7 +81,7 @@ Interface PR #29 remains an independent evidence/documentation receiver lane req
 
 ## HELD / open
 
-- Final exact-head push and PR-triggered CI after documentation commits, then independent Verification of that exact head before Creation Director integration.
+- Current exact-head push and PR-triggered CI must be green, and independent Verification must verify that same exact head before Creation Director integration.
 - Interface PR #29 exact candidate remains outside Assembly authority and still requires its independent Verification path.
 - MorphTile core #17 remains core-owned; Assembly does not duplicate or hide it.
 - Presentation z-order remains HOLD because no evidenced canonical MorphTile-core primitive/schema exists.

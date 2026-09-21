@@ -1,1 +1,11 @@
-{"name":"@axm/morphtile-machine-assembly","version":"0.6.4","private":false,"type":"commonjs","scripts":{"test":"node --test test/*.test.js"},"engines":{"node":">=18"},"license":"LicenseRef-PolyForm-Noncommercial-1.0.0"}
+{
+  "name": "axm-morphtile-machine-assembly",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "test": "node --test test/interface-v05.integration.test.js test/kit-preserialization-integrity.test.js test/kit-runtime.test.js test/named-own-key-closure.test.js test/nested-interface-target.integration.test.js test/round10-current-receiver.integration.test.js test/round19-current-receiver.integration.test.js test/round8-portable-composition.integration.test.js test/version-consistency.test.js test/view-operation.test.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

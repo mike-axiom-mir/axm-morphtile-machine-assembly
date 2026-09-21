@@ -142,6 +142,34 @@ function assertAssemblySemanticShape(value, path) {
     );
   }
 
+  // These are structured MorphTile tile fields, not truthiness-controlled
+  // optional values. If a producer authors one, preserve its container identity
+  // instead of allowing later `candidate[field] !== undefined`/runtime truthiness
+  // to turn malformed matter into accepted or omitted content.
+  if (isCandidateFieldPath(path, "params") && !Array.isArray(value)) {
+    shapeError(
+      "HOLD_PARAMS_SHAPE_INVALID",
+      path,
+      "candidate.params must be an authored array when present; null, objects, strings, and falsey primitives are not parameter omission."
+    );
+  }
+
+  if (isCandidateFieldPath(path, "view") && !isPlainRecord(value)) {
+    shapeError(
+      "HOLD_VIEW_SHAPE_INVALID",
+      path,
+      "candidate.view must be an authored plain map when present; null, arrays, strings, and falsey primitives are not view omission."
+    );
+  }
+
+  if (isCandidateFieldPath(path, "presentation") && !isPlainRecord(value)) {
+    shapeError(
+      "HOLD_PRESENTATION_SHAPE_INVALID",
+      path,
+      "candidate.presentation must be an authored plain map when present; null, arrays, strings, and falsey primitives are not presentation omission."
+    );
+  }
+
   if (
     value != null &&
     (

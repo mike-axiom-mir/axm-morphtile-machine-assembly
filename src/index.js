@@ -513,7 +513,7 @@ function collectSourceProvenance(inputs) {
       status: input && hasOwn(input, "status") ? input.status : null,
       machine: input && input.machine ? clone(input.machine) : null,
       request_id: input && input.request_id ? input.request_id : null,
-      candidate_schema: candidate && candidate.schema ? candidate.schema : null,
+      candidate_schema: candidate && hasOwn(candidate, "schema") ? clone(candidate.schema) : null,
       provenance: input && hasOwn(input, "provenance") ? clone(input.provenance) : null
     };
   });

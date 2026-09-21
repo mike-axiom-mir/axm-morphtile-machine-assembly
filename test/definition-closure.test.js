@@ -90,6 +90,55 @@ test("definition closure follows nested recipe use references transitively and s
   assert.deepEqual(complete.required_definitions, ["bolt", "panel"]);
 });
 
+test("definition closure requires authored own definitions instead of inherited host keys", () => {
+  const candidate = formCandidate([{ use: "__proto__" }]);
+  assert.deepEqual(inspectDefinitionClosure(candidate, null), {
+    required: ["__proto__"],
+    missing: ["__proto__"]
+  });
+
+  const held = run(request(candidate));
+  assert.equal(held.status, "HOLD");
+  const closureHold = held.holds.find((item) => item.code === "HOLD_DEFINITION_CLOSURE_INCOMPLETE");
+  assert.deepEqual(closureHold.missing, ["__proto__"]);
+  assert.deepEqual(closureHold.required, ["__proto__"]);
+});
+
+test("definition and defs aliases are both preserved and conflicting authored aliases HOLD", () => {
+  const candidate = formCandidate([{ use: "panel" }]);
+  const completeRequest = request(candidate);
+  completeRequest.world_requirements = {
+    definitions: {
+      panel: definition("panel", [{ use: "bolt" }])
+    },
+    defs: {
+      bolt: definition("bolt", [{ shape: "cylinder", size: [0.1, 0.1, 0.2] }])
+    }
+  };
+
+  const complete = run(completeRequest);
+  assert.equal(complete.status, "CANDIDATE", JSON.stringify(complete.holds));
+  assert.deepEqual(complete.required_definitions, ["bolt", "panel"]);
+  assert.equal(complete.world_requirements.definitions.panel.id, "panel");
+  assert.equal(complete.world_requirements.definitions.bolt.id, "bolt");
+
+  const conflictRequest = request(candidate);
+  conflictRequest.world_requirements = {
+    definitions: {
+      panel: definition("panel", [{ shape: "plane", size: [1, 1, 1] }])
+    },
+    defs: {
+      panel: definition("panel", [{ shape: "sphere", size: [1, 1, 1] }])
+    }
+  };
+
+  const held = run(conflictRequest);
+  assert.equal(held.status, "HOLD");
+  const conflict = held.holds.find((item) => item.code === "HOLD_DEFINITION_CONFLICT");
+  assert.equal(conflict.identity, "panel");
+  assert.deepEqual(conflict.variants.map((entry) => entry.body.facets.mesh.data.parts[0].shape), ["plane", "sphere"]);
+});
+
 test("capability grants_ref participates in the same definition closure rule", () => {
   const closure = inspectDefinitionClosure({
     schema: "morphtile.tile-spec/v0.4",

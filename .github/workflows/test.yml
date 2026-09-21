@@ -94,6 +94,16 @@ jobs:
           path: .siblings/round22/interface
       - uses: actions/checkout@v4
         with:
+          repository: mike-axiom-mir/axm-morphtile-machine-form
+          ref: 565798b682b60907ecea91a646df1bbb35157a28
+          path: .siblings/round37/form
+      - uses: actions/checkout@v4
+        with:
+          repository: mike-axiom-mir/axm-morphtile-machine-interface
+          ref: 935774d6f2cca71f528d008f8805397a6333eaea
+          path: .siblings/round37/interface
+      - uses: actions/checkout@v4
+        with:
           repository: mike-axiom-mir/axm-morphtile
           ref: 2bdf8eade1376055473b9cc1b11734b72a5566e5
           path: .runtime/morphtile
@@ -155,3 +165,13 @@ jobs:
           ROUND22_INTERFACE_COMMIT: 96dfea316216922dffca872ec083a549e4777c96
           ROUND22_MORPHTILE_CORE_PATH: ${{ github.workspace }}/.runtime/morphtile/core/morphtile.js
           ROUND22_MORPHTILE_COMMIT: 2bdf8eade1376055473b9cc1b11734b72a5566e5
+          ROUND37_FORM_MACHINE_PATH: ${{ github.workspace }}/.siblings/round37/form/src
+          ROUND37_FORM_COMMIT: 565798b682b60907ecea91a646df1bbb35157a28
+          ROUND37_SURFACE_MACHINE_PATH: ${{ github.workspace }}/.siblings/round22/surface/src
+          ROUND37_SURFACE_COMMIT: 4e4495182aa83e5dfba37722fc3756a70cfaafaa
+          ROUND37_CAPABILITY_MACHINE_PATH: ${{ github.workspace }}/.siblings/capability/src
+          ROUND37_CAPABILITY_COMMIT: edc07af182ee26ca1ceb64b5d5205591ec6aca9d
+          ROUND37_INTERFACE_MACHINE_PATH: ${{ github.workspace }}/.siblings/round37/interface/src
+          ROUND37_INTERFACE_COMMIT: 935774d6f2cca71f528d008f8805397a6333eaea
+          ROUND37_MORPHTILE_CORE_PATH: ${{ github.workspace }}/.runtime/morphtile/core/morphtile.js
+          ROUND37_MORPHTILE_COMMIT: 2bdf8eade1376055473b9cc1b11734b72a5566e5

@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "test": "node --test test/foundation.test.js test/input-closure.test.js test/preserialization-integrity.test.js test/proxy-source-integrity.test.js test/semantic-container-integrity.test.js test/semantic-discriminator-integrity.test.js test/candidate-schema-identity.test.js test/candidate-container-path-integrity.test.js test/provenance-presence.test.js test/request-own-key-integrity.test.js test/authored-name-hold-integrity.test.js test/world-requirement-identity.test.js"
+    "test": "node --test test/capability-grant-proof.integration.test.js test/conflict-evidence.test.js test/current-sibling-retention.integration.test.js test/definition-closure.test.js test/facet-own-key-identity.test.js test/form-definition.integration.test.js test/form-own-key-setting.integration.test.js test/four-machine.integration.test.js test/interface-operations.test.js test/interface-proof-kit.integration.test.js test/interface-v05.integration.test.js test/kit-preserialization-integrity.test.js test/kit-runtime.test.js test/named-own-key-closure.test.js test/nested-interface-target.integration.test.js test/round10-current-receiver.integration.test.js test/round19-current-receiver.integration.test.js test/round8-portable-composition.integration.test.js test/version-consistency.test.js test/view-operation.test.js"
   },
   "engines": {
     "node": ">=18"

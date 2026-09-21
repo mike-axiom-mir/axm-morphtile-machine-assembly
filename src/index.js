@@ -95,7 +95,7 @@ function preserveInputWarnings(input, inputIndex, warnings) {
     warnings.push({
       code: "UPSTREAM_WARNING",
       input: inputIndex,
-      machine: input && input.machine && input.machine.id ? input.machine.id : null,
+      machine: input && input.machine && hasOwn(input.machine, "id") ? clone(input.machine.id) : null,
       warning: clone(warning)
     });
   }

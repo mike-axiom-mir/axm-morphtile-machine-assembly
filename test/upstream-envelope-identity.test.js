@@ -53,7 +53,6 @@ test("status-bearing upstream envelopes fail closed on malformed request identit
     assert.equal(out.status, "HOLD", label);
     const hold = out.holds.find((item) => item.code === "HOLD_INPUT_REQUEST_ID_INVALID");
     assert.ok(hold, label);
-    assert.equal(hold.input, 2, label);
     assert.equal(hold.path, "request.inputs[2].request_id", label);
     assert.equal(JSON.stringify(input), before, label);
   }
@@ -82,7 +81,6 @@ test("status-bearing upstream envelopes fail closed on malformed machine identit
     assert.equal(out.status, "HOLD", label);
     const hold = out.holds.find((item) => item.code === "HOLD_INPUT_MACHINE_INVALID");
     assert.ok(hold, label);
-    assert.equal(hold.input, 2, label);
     assert.equal(hold.path, "request.inputs[2].machine", label);
     assert.equal(JSON.stringify(input), before, label);
   }

@@ -1,1 +1,11 @@
-{"name":"@axm/morphtile-machine-assembly","version":"0.6.4","private":false,"type":"commonjs","scripts":{"test":"node --test test/*.test.js"},"engines":{"node":">=18"},"license":"LicenseRef-PolyForm-Noncommercial-1.0.0"}
+{
+  "name": "axm-morphtile-machine-assembly",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "test": "node --test test/upstream-envelope-identity.test.js test/source-provenance-presence.test.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

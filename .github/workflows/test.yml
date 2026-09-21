@@ -49,6 +49,21 @@ jobs:
           path: .siblings/round8/interface
       - uses: actions/checkout@v4
         with:
+          repository: mike-axiom-mir/axm-morphtile-machine-form
+          ref: 378e7896acfdf8d4bd28d08127c1f57546e3eef1
+          path: .siblings/round10/form
+      - uses: actions/checkout@v4
+        with:
+          repository: mike-axiom-mir/axm-morphtile-machine-surface
+          ref: 4349ba0d926aee1d36dde86fc7f69d04a58bf924
+          path: .siblings/round10/surface
+      - uses: actions/checkout@v4
+        with:
+          repository: mike-axiom-mir/axm-morphtile-machine-interface
+          ref: 1a941f8ff88ca590952571e3eeeeeeef6daefd77
+          path: .siblings/round10/interface
+      - uses: actions/checkout@v4
+        with:
           repository: mike-axiom-mir/axm-morphtile
           ref: 2bdf8eade1376055473b9cc1b11734b72a5566e5
           path: .runtime/morphtile
@@ -80,3 +95,13 @@ jobs:
           ROUND8_INTERFACE_COMMIT: 3f29f98b4125fe3376f02aabc509dc3da610deae
           ROUND8_MORPHTILE_CORE_PATH: ${{ github.workspace }}/.runtime/morphtile/core/morphtile.js
           ROUND8_MORPHTILE_COMMIT: 2bdf8eade1376055473b9cc1b11734b72a5566e5
+          ROUND10_FORM_MACHINE_PATH: ${{ github.workspace }}/.siblings/round10/form/src
+          ROUND10_FORM_COMMIT: 378e7896acfdf8d4bd28d08127c1f57546e3eef1
+          ROUND10_SURFACE_MACHINE_PATH: ${{ github.workspace }}/.siblings/round10/surface/src
+          ROUND10_SURFACE_COMMIT: 4349ba0d926aee1d36dde86fc7f69d04a58bf924
+          ROUND10_CAPABILITY_MACHINE_PATH: ${{ github.workspace }}/.siblings/capability/src
+          ROUND10_CAPABILITY_COMMIT: edc07af182ee26ca1ceb64b5d5205591ec6aca9d
+          ROUND10_INTERFACE_MACHINE_PATH: ${{ github.workspace }}/.siblings/round10/interface/src
+          ROUND10_INTERFACE_COMMIT: 1a941f8ff88ca590952571e3eeeeeeef6daefd77
+          ROUND10_MORPHTILE_CORE_PATH: ${{ github.workspace }}/.runtime/morphtile/core/morphtile.js
+          ROUND10_MORPHTILE_COMMIT: 2bdf8eade1376055473b9cc1b11734b72a5566e5

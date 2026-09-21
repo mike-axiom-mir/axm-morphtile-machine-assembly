@@ -56,7 +56,22 @@ test("source_provenance defaults provenance to null only when the upstream field
   assert.equal(out.source_provenance[0].provenance, null);
 });
 
-test("the bounded provenance repair does not redefine adjacent source-trace identity policy", () => {
+test("source_provenance preserves authored falsey candidate schema identity on HOLD", () => {
+  for (const schema of [false, 0, ""]) {
+    const input = candidateInput({ producer: "schema-presence-proof" });
+    input.candidate.schema = schema;
+    const out = assemble(input, `source-schema-${String(schema)}`);
+    assert.equal(out.status, "HOLD");
+    assert.equal(out.holds.some((hold) => hold.code === "HOLD_CANDIDATE_SCHEMA_INVALID"), true);
+    assert.deepEqual(
+      out.source_provenance[0].candidate_schema,
+      schema,
+      `schema=${JSON.stringify(schema)}`
+    );
+  }
+});
+
+test("the bounded source-trace repair does not redefine machine/request_id identity policy", () => {
   const input = candidateInput(false);
   input.machine = { id: "axm.test.producer", version: "1" };
   input.request_id = "upstream-source-provenance";

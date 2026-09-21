@@ -23,7 +23,77 @@ function nonportable(path, detail) {
   throw new PortableDataError("HOLD_ASSEMBLY_INPUT_NONPORTABLE_VALUE", path, detail);
 }
 
+function shapeError(code, path, detail) {
+  throw new PortableDataError(code, path, detail);
+}
+
+function isPlainRecord(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  const prototype = Object.getPrototypeOf(value);
+  return prototype === Object.prototype || prototype === null;
+}
+
+function assertAssemblySemanticShape(value, path) {
+  if (path === "request.inputs" && !Array.isArray(value)) {
+    shapeError("HOLD_INPUTS_SHAPE_INVALID", path, "Assembly request.inputs must be an authored array; Assembly will not inherit iterable/string container semantics.");
+  }
+
+  if (/^request\.inputs\[\d+\]$/.test(path) && !isPlainRecord(value)) {
+    shapeError("HOLD_INPUT_SHAPE_INVALID", path, "Each Assembly input entry must be an authored plain object.");
+  }
+
+  if (
+    (path === "request.dependencies" || /^request\.inputs\[\d+\]\.dependencies$/.test(path)) &&
+    !Array.isArray(value)
+  ) {
+    shapeError("HOLD_DEPENDENCIES_SHAPE_INVALID", path, "Assembly dependency collections must be authored arrays; objects and strings are not reinterpreted as dependency sequences.");
+  }
+
+  if (/^request\.inputs\[\d+\]\.warnings$/.test(path) && !Array.isArray(value)) {
+    shapeError("HOLD_WARNINGS_SHAPE_INVALID", path, "Upstream warning collections must be authored arrays.");
+  }
+
+  if (/^request\.inputs\[\d+\]\.candidate\.form_hints$/.test(path) && !Array.isArray(value)) {
+    shapeError("HOLD_FORM_HINTS_SHAPE_INVALID", path, "candidate.form_hints must be an authored array of non-empty strings.");
+  }
+
+  if (/^request\.inputs\[\d+\]\.candidate\.form_hints\[\d+\]$/.test(path) && (typeof value !== "string" || !value)) {
+    shapeError("HOLD_FORM_HINTS_SHAPE_INVALID", path, "Every candidate.form_hints entry must be a non-empty string.");
+  }
+
+  if (/^request\.inputs\[\d+\]\.candidate\.facets$/.test(path) && !isPlainRecord(value)) {
+    shapeError("HOLD_FACETS_SHAPE_INVALID", path, "candidate.facets must be an authored plain map; array indices are not facet identities.");
+  }
+
+  if (
+    (
+      path === "request.world_requirements" ||
+      /^request\.inputs\[\d+\]\.world_requirements$/.test(path) ||
+      path === "request.world_requirements.words" ||
+      path === "request.world_requirements.definitions" ||
+      path === "request.world_requirements.defs" ||
+      /^request\.inputs\[\d+\]\.world_requirements\.(words|definitions|defs)$/.test(path)
+    ) &&
+    !isPlainRecord(value)
+  ) {
+    shapeError("HOLD_WORLD_REQUIREMENTS_SHAPE_INVALID", path, "World requirements and their named word/definition collections must be authored plain maps.");
+  }
+}
+
 function clonePortableValue(value, path = "value", stack = new Set()) {
+  // Proxy detection must happen before semantic shape checks: even seemingly
+  // harmless reflection such as Array.isArray/getPrototypeOf can throw or trap
+  // on revoked/intercepted values.
+  if (value && typeof value === "object" && isProxy(value)) {
+    nonportable(path, "Assembly input uses a Proxy object whose traps could execute during authored-data inspection.");
+  }
+
+  // Portability and semantic container identity are separate promises. A value
+  // can be JSON-portable while still being the wrong authored container type.
+  // Reject those shapes before host iteration/Object.keys semantics can silently
+  // reinterpret strings, arrays or objects as another Assembly grammar.
+  assertAssemblySemanticShape(value, path);
+
   if (value === null || typeof value === "string" || typeof value === "boolean") return value;
 
   if (typeof value === "number") {
@@ -46,14 +116,6 @@ function clonePortableValue(value, path = "value", stack = new Set()) {
 
   if (typeof value !== "object") {
     nonportable(path, "Assembly input contains an unsupported portable value.");
-  }
-
-  // Descriptor-safe reflection is still executable for JavaScript Proxy values:
-  // prototype/key/descriptor operations can dispatch caller-controlled traps.
-  // Detect Proxy interception before any reflective inspection so source-integrity
-  // validation itself cannot become a caller-code execution surface.
-  if (isProxy(value)) {
-    nonportable(path, "Assembly input uses a Proxy object whose traps could execute during authored-data inspection.");
   }
 
   if (stack.has(value)) {

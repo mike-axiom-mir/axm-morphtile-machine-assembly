@@ -34,9 +34,8 @@ function assemble(input, label) {
   return run(request);
 }
 
-test("status-bearing upstream envelopes fail closed on malformed request identity", () => {
+test("status-bearing upstream envelopes fail closed on malformed authored request identity", () => {
   for (const [label, value] of [
-    ["missing", undefined],
     ["null", null],
     ["false", false],
     ["zero", 0],
@@ -44,8 +43,7 @@ test("status-bearing upstream envelopes fail closed on malformed request identit
     ["object", { id: "not-a-request-id" }]
   ]) {
     const input = upstreamEnvelope();
-    if (value === undefined) delete input.request_id;
-    else input.request_id = value;
+    input.request_id = value;
     const before = JSON.stringify(input);
 
     const out = assemble(input, "request-id-" + label);
@@ -58,9 +56,8 @@ test("status-bearing upstream envelopes fail closed on malformed request identit
   }
 });
 
-test("status-bearing upstream envelopes fail closed on malformed machine identity", () => {
+test("status-bearing upstream envelopes fail closed on malformed authored machine identity", () => {
   for (const [label, value] of [
-    ["missing", undefined],
     ["null", null],
     ["false", false],
     ["string", "axm.test.producer"],
@@ -72,8 +69,7 @@ test("status-bearing upstream envelopes fail closed on malformed machine identit
     ["structured-id", { id: { name: "axm.test.producer" }, version: "1.0.0" }]
   ]) {
     const input = upstreamEnvelope();
-    if (value === undefined) delete input.machine;
-    else input.machine = value;
+    input.machine = value;
     const before = JSON.stringify(input);
 
     const out = assemble(input, "machine-" + label);
@@ -86,16 +82,28 @@ test("status-bearing upstream envelopes fail closed on malformed machine identit
   }
 });
 
-test("status-only legacy envelopes remain accepted when no source identity fields are authored", () => {
-  const input = upstreamEnvelope();
-  delete input.request_id;
-  delete input.machine;
+test("legacy status envelopes may omit either source identity field without fabricating it", () => {
+  const machineOnly = upstreamEnvelope();
+  delete machineOnly.request_id;
+  const machineOnlyOut = assemble(machineOnly, "machine-only-legacy");
+  assert.equal(machineOnlyOut.status, "CANDIDATE", JSON.stringify(machineOnlyOut.holds));
+  assert.deepEqual(machineOnlyOut.source_provenance[2].machine, machineOnly.machine);
+  assert.equal(machineOnlyOut.source_provenance[2].request_id, null);
 
-  const out = assemble(input, "status-only-legacy");
+  const requestOnly = upstreamEnvelope();
+  delete requestOnly.machine;
+  const requestOnlyOut = assemble(requestOnly, "request-only-legacy");
+  assert.equal(requestOnlyOut.status, "CANDIDATE", JSON.stringify(requestOnlyOut.holds));
+  assert.equal(requestOnlyOut.source_provenance[2].machine, null);
+  assert.equal(requestOnlyOut.source_provenance[2].request_id, requestOnly.request_id);
 
-  assert.equal(out.status, "CANDIDATE", JSON.stringify(out.holds));
-  assert.equal(out.source_provenance[2].machine, null);
-  assert.equal(out.source_provenance[2].request_id, null);
+  const statusOnly = upstreamEnvelope();
+  delete statusOnly.request_id;
+  delete statusOnly.machine;
+  const statusOnlyOut = assemble(statusOnly, "status-only-legacy");
+  assert.equal(statusOnlyOut.status, "CANDIDATE", JSON.stringify(statusOnlyOut.holds));
+  assert.equal(statusOnlyOut.source_provenance[2].machine, null);
+  assert.equal(statusOnlyOut.source_provenance[2].request_id, null);
 });
 
 test("valid upstream envelope identity remains accepted and exactly traceable", () => {

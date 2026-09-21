@@ -1,8 +1,8 @@
 # Status
 
-- State: KIT RECEIVER-APPLICATION CLOSURE CANDIDATE — EXACT-HEAD CI + INDEPENDENT VERIFICATION GATE
+- State: KIT RECEIVER-POSTCONDITION CLOSURE CANDIDATE — EXACT-HEAD CI + INDEPENDENT VERIFICATION GATE
 - Test command: `npm test`
-- Assembly integrated main/base: `9fe8b53daf3e572c596c142859cca2199a976553`
+- Assembly integrated main/base: `4996d524e05ff50a7305c2ebce81b81954f4ac05`
 - MorphTile integrated receiver: `2bdf8eade1376055473b9cc1b11734b72a5566e5`
 - Envelope: provisional v0.1
 - Visual proof: none
@@ -13,49 +13,54 @@ Assembly deterministically combines compatible tile, facet, capability and revie
 
 Definition references in proven MorphTile recipe/capability forms are discovered and missing definitions HOLD. World-requirement word/definition identity is checked so an explicit embedded `name`/`id` cannot contradict the map key without a HOLD. Exact Interface target/anchor proof obligations may be discharged only against isolated staged MorphTile matter that actually satisfies them. Missing parent/world context remains a kit-time HOLD.
 
-Successful closure-preserving candidates can be materialized through an explicitly supplied MorphTile runtime into a real `morphtile-kit`, with MorphTile-owned hashing. Known local Interface target/presentation proof dependencies are deterministically discharged against staged matter; unresolved arbitrary dependency records that the current kit format cannot represent HOLD rather than being dropped.
+Successful closure-preserving candidates can be materialized through an explicitly supplied MorphTile runtime into a real `morphtile-kit`, with MorphTile-owned hashing. A fresh receiver must first accept the kit as a `READY` import plan, every planned operation must execute, and Assembly now also verifies the exact installed postcondition of every supported READY import operation before materialization may return `CANDIDATE`.
 
-## Current candidate: complete receiver application proof
+## Current candidate: receiver postcondition closure
 
-A concrete proof gap existed after kit verification: `materializeKit` treated fresh-world `importKit(...).status === "READY"` as sufficient evidence that the generated kit could actually be integrated by the receiver. MorphTile `READY` is an ordered import plan, not proof that every planned structural operation is valid when executed.
+Integrated Assembly already executed every `READY` import operation after PR #39, but one proof gap remained: returning normally from `applyStructOp` was treated as evidence that the operation actually installed the intended matter. A supplied runtime could silently no-op an operation, or install only part of the READY plan, and Assembly would still emit `KIT_APPLY` PASS.
 
-The regression demonstrates the difference with a portable authored word named `2legs`. Assembly and kit hashing can preserve that word and the pinned MorphTile runtime can plan the kit as `READY`, but the runtime rejects the corresponding `word.define` operation because the word name violates MorphTile's own grammar. Before this candidate, Assembly incorrectly returned materialization `CANDIDATE` without executing that operation.
+This candidate converts that repeated receiver reasoning into deterministic machinery:
 
-The candidate converts that repeated receiver reasoning into deterministic machinery:
+- the exact ordered READY plan remains the receiver authority after `importKit` has verified the portable package;
+- every operation is still cloned and executed in order against an isolated fresh receiver;
+- after execution, Assembly checks the public postcondition of each supported kit-import operation: `word.define`, `def.put`, and root `tile.add`;
+- a missing or changed planned word, definition or tile now returns `HOLD_KIT_RUNTIME_RECEIVER_INCOMPLETE` with deterministic missing/changed evidence;
+- an unexpected READY operation type also fails closed rather than being silently treated as proven;
+- successful materialization adds `KIT_RECEIVER_CLOSURE` PASS evidence containing the READY-plan hash and exact count of verified postconditions.
 
-- the supplied runtime contract must expose `applyStructOp`;
-- fresh-world `importKit` must still return `READY` without overwrite/partial mode;
-- the returned operation list must be inspectable;
-- every operation is cloned and executed in order against the isolated fresh receiver;
-- missing operation evidence returns `HOLD_KIT_RUNTIME_IMPORT_OPS_INVALID`;
-- receiver rejection returns `HOLD_KIT_RUNTIME_APPLY_FAILED` with exact operation index, operation and runtime error preserved;
-- successful materialization includes explicit `KIT_APPLY` PASS evidence.
-
-A positive control proves that an ordinary portable word kit remains compatible through the same complete path.
+The receiver proof is deliberately plan-relative rather than a byte-for-byte comparison against the pre-import kit. MorphTile's public import operations normalize some portable matter while installing it, so transport identity and receiver-installed identity are separate evidence layers.
 
 ## Evidence
 
-Regression-first branch head `a9182e46acabe09de49cdff36d037f6fbb196194` intentionally failed Actions run `35619102556`: the invalid receiver word was still promoted to `CANDIDATE`, and no `KIT_APPLY` receipt existed.
+Regression-first head `6dac7da089a38e28f9034778753a51c231c26abe` intentionally failed PR Actions run `35625734996`: a runtime whose `applyStructOp` returned successfully without installing anything was still promoted by the integrated behavior.
 
-Implementation head `338b0ebc7010df734d98b8dfb5bde8db50142c3b` passed Actions run `35619596574`. The exact suite reported 148 tests, 148 pass, 0 fail, 0 skipped and 0 TODO; both new receiver-application regressions passed.
+The first repair head `287171867c71d8f555baa626e7187436a6b9a24b` also failed push Actions run `35625955815`. That implementation compared the post-import receiver directly to the pre-import kit hash, which was too strict because MorphTile's public receiver operations intentionally normalize installed word/definition matter. That failed repair is retained as evidence: receiver closure must not silently equate transport identity with installed representation identity.
 
-Documentation is part of this candidate because the previous README/materialization note incorrectly described `READY` as the terminal receiver acceptance proof. Final exact-head push/PR CI must be re-earned after documentation commits before this candidate can be handed to Verification.
+A second focused test head `ae2cdde36155410a54ea154b007d2ef009954bf3` kept the failure visible while adding partial-install coverage: a receiver that installs the tile but silently drops the planned word must also HOLD.
+
+Corrected implementation head `ae7d0de178e230240f2ce89e75f90feb2cd38876` verifies the receiver against the normalized READY operation plan instead. Both PR Actions run `35626512602` and push Actions run `35626507962` completed successfully; `npm test` succeeded in the PR job.
+
+Documentation changes follow that green implementation and therefore final exact-head push + PR CI must be re-earned before handoff.
 
 ## Reusable rules learned
 
-**An import plan is not receiver closure.** A machine claiming a complete portable kit must execute the exact ordered import operations against an isolated fresh receiver before returning `CANDIDATE`.
+**Execution success is not installation proof.** A complete kit claim requires proving that every READY operation's intended receiver postcondition is actually present after application.
 
-**Failure evidence stays specific.** If a receiver rejects a planned operation, preserve the exact operation, its order and the runtime error rather than collapsing the failure into a generic import rejection.
+**Transport identity and receiver identity are separate evidence layers.** `kit.expect.sha256` proves the portable package that entered `importKit`; receiver closure must be checked against the receiver-normalized READY plan rather than blindly comparing the installed world to the pre-import bytes.
 
-**Historical exact receipts stay historical.** Existing round-8, round-10, round-19 and round-22 lanes remain exact evidence for their pinned producer/runtime heads. Internal sibling movement that does not change emitted representation is not by itself justification to relabel or duplicate a receiver lane.
+**Receiver proof follows the public operation contract.** Assembly may verify only the operation forms it has exact evidence for. A future or unknown READY operation fails closed until its receiver postcondition has an explicit proof rule.
+
+**Failure evidence stays specific.** Missing matter, changed matter, unsupported operations, operation rejection and transport-hash rejection remain distinct HOLDs rather than collapsing into one generic receiver failure.
+
+**Historical exact receipts stay historical.** Existing receiver lanes remain evidence for their pinned producer/runtime heads; this candidate does not relabel old receipts.
 
 **Merged sibling growth becomes evidence, not automatic authority.** Unmerged Form/Interface candidates remain outside Assembly authority and are not absorbed merely because they exist.
 
 ## Placement decision
 
-This candidate belongs in Assembly because the missing proof was in Assembly's claim that it had produced a complete receiver-usable kit. MorphTile core already exposes the authoritative `importKit` plan and `applyStructOp` execution contract; no new universal core representation/runtime primitive is required.
+This candidate belongs in Assembly because the missing proof was in Assembly's claim that it had produced a complete receiver-usable kit. MorphTile core already exposes the authoritative `importKit` READY plan, `applyStructOp`, receiver world and lookup/hash contracts. No new universal core representation/runtime primitive is required.
 
-MorphTile core #17 remains the separately owned repeat-text lexical-scope regression/HOLD. Presentation z-order remains a core-level HOLD without a canonical primitive. Unmerged sibling candidates remain independent evidence lanes.
+Current Form PR #40 remains an independent producer-side generated-grid-scale convergence candidate requiring Verification. Current Interface receiver-evidence work remains independent. MorphTile core #17 remains the separately owned repeat-text lexical-scope regression/HOLD. Presentation z-order remains a core-level HOLD without a canonical primitive.
 
 ## HELD / open
 
@@ -65,5 +70,5 @@ MorphTile core #17 remains the separately owned repeat-text lexical-scope regres
 - No automatic conflict winner or priority policy for incompatible candidate, word, definition or dependency variants.
 - Assembly does not invent, fetch or synthesize missing definitions, dependencies, `ui_panel` eligibility, target identity or parent/world context.
 - External/contextual dependencies not present in portable matter remain HOLD.
-- No arbitrary future Interface schema compatibility without separate proof.
+- No arbitrary future Interface schema compatibility or future READY operation semantics without separate proof.
 - No visual-quality proof, automatic CANON, self-merge or merge authority.

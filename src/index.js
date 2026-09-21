@@ -104,11 +104,21 @@ function preserveInputWarnings(input, inputIndex, warnings) {
 function inspectInputEnvelope(input, inputIndex, holds) {
   if (!input || typeof input !== "object" || Array.isArray(input) || !hasOwn(input, "status")) return true;
 
+  if (typeof input.status !== "string") {
+    holds.push({
+      code: "HOLD_INPUT_STATUS_INVALID",
+      input: inputIndex,
+      status: clone(input.status),
+      detail: "An upstream envelope status must be a string before Assembly compares or reports it."
+    });
+    return false;
+  }
+
   if (input.status !== "CANDIDATE") {
     holds.push({
       code: "HOLD_INPUT_NOT_CANDIDATE",
       input: inputIndex,
-      status: input.status == null ? null : String(input.status),
+      status: input.status,
       upstream_holds: clone(input.holds || [])
     });
     return false;
@@ -295,8 +305,24 @@ function mergeCandidate(assembled, assembledPath, input, inputIndex, conflicts, 
 
   mergeFormHints(assembled.form_hints, candidate.form_hints);
 
-  if (schema === "morphtile.facet-candidate/v0.4" || (candidate.facet && hasOwn(candidate, "value"))) {
-    mergeObject(assembled.facets, { [candidate.facet]: candidate.value }, "facets", conflicts, owners, "input[" + inputIndex + "]");
+  if (schema === "morphtile.facet-candidate/v0.4" || (hasOwn(candidate, "facet") && hasOwn(candidate, "value"))) {
+    if (typeof candidate.facet !== "string" || !candidate.facet) {
+      holds.push({
+        code: "HOLD_FACET_CANDIDATE_ID_INVALID",
+        input: inputIndex,
+        facet: clone(candidate.facet),
+        detail: "Facet-candidate identity must be a non-empty string before Assembly uses it as an authored map key."
+      });
+      return false;
+    }
+    const facetFragment = {};
+    Object.defineProperty(facetFragment, candidate.facet, {
+      value: candidate.value,
+      enumerable: true,
+      configurable: true,
+      writable: true
+    });
+    mergeObject(assembled.facets, facetFragment, "facets", conflicts, owners, "input[" + inputIndex + "]");
     return false;
   }
 

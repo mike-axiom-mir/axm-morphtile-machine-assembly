@@ -49,3 +49,20 @@ runtimeTest("complete receiver application proof keeps an ordinary portable word
   assert.equal(materialized.evidence.some((entry) => entry.kind === "KIT_APPLY" && entry.status === "PASS"), true);
   assert.equal(materialized.kit.words.ease.name, "ease");
 });
+
+runtimeTest("kit materialization HOLDS when READY operations return without installing the receiver closure", () => {
+  const MT = require(path.resolve(runtimePath));
+  const assembled = run(requestWithWords({
+    ease: { name: "ease", args: ["x"], body: ["var", "x"], note: "receiver closure proof" }
+  }));
+  assert.equal(assembled.status, "CANDIDATE", JSON.stringify(assembled.holds));
+
+  const silentRuntime = Object.assign({}, MT, {
+    applyStructOp() {}
+  });
+  const materialized = materializeKit(assembled, silentRuntime, { name: "Silent apply must not count as receiver closure" });
+
+  assert.equal(materialized.status, "HOLD");
+  assert.equal(materialized.kit, null);
+  assert.equal(materialized.holds[0].code, "HOLD_KIT_RUNTIME_RECEIVER_INCOMPLETE");
+});

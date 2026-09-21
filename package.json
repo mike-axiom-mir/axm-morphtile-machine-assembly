@@ -1,9 +1,1 @@
-{
-  "name": "axm-morphtile-machine-assembly",
-  "version": "0.1.0",
-  "private": true,
-  "scripts": {
-    "test": "node --test test/form-definition.integration.test.js test/form-own-key-setting.integration.test.js test/four-machine.integration.test.js test/interface-operations.test.js test/interface-proof-kit.integration.test.js"
-  },
-  "engines": {"node": ">=18"}
-}
+{"name":"@axm/morphtile-machine-assembly","version":"0.6.4","private":false,"type":"commonjs","scripts":{"test":"node --test test/form-definition.integration.test.js test/form-own-key-setting.integration.test.js test/four-machine.integration.test.js test/interface-operations.test.js test/interface-proof-kit.integration.test.js"},"engines":{"node":">=18"},"license":"LicenseRef-PolyForm-Noncommercial-1.0.0"}

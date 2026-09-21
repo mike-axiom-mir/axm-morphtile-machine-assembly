@@ -13,6 +13,20 @@ A machine envelope that declares `status` participates in assembly only when it 
 
 Assembly never upgrades an upstream HOLD into a successful candidate merely because other inputs were compatible.
 
+## Source identity integrity
+
+Source trace preservation and source-envelope identity validity are separate contracts.
+
+For backward compatibility, a status-bearing input may omit `request_id`, `machine`, or both. Assembly does not fabricate the missing identity: absent source fields remain absent and are represented as `null` in `source_provenance`.
+
+When a source identity field is authored on a status-bearing input, that field must satisfy its own semantic shape before Assembly treats it as machine-envelope identity:
+
+- authored `request_id` must be a non-empty string, otherwise Assembly returns `HOLD_INPUT_REQUEST_ID_INVALID` at the exact source path;
+- authored `machine` must be a plain map whose own `id` and `version` fields are non-empty strings, otherwise Assembly returns `HOLD_INPUT_MACHINE_INVALID` at the exact source path;
+- Proxy/accessor and other non-portable authored values remain under the existing portability HOLD boundary rather than being executed or silently normalized.
+
+Status-less legacy fragments keep their legacy candidate semantics. Portable metadata on those fragments may still be preserved in the source trace by authored presence, but preservation alone does not promote that metadata into validated machine-envelope authority.
+
 ## Unsupported candidate schemas
 
 A syntactically present candidate with an unsupported schema is not discarded. Assembly:
@@ -33,4 +47,4 @@ If the same named word/definition has different meaning across sources, Assembly
 
 ## Reusable rule
 
-**Assembly may combine only inputs that are explicitly eligible to become matter. It must carry unresolved upstream state and unsupported meaning forward as evidence, never reinterpret absence as success.**
+**Assembly may combine only inputs that are explicitly eligible to become matter. It must carry unresolved upstream state and unsupported meaning forward as evidence, never reinterpret absence as success. Source-trace preservation does not grant source-envelope validity: absence may remain absence for compatibility, while authored identity must satisfy its own semantic contract before it is trusted as identity.**

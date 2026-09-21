@@ -15,18 +15,20 @@ const REQUEST_FIELDS = new Set([
 const REQUEST_INTENT_FIELDS = new Set(["id", "name", "tile_path"]);
 
 class PortableDataError extends Error {
-  constructor(code, path, detail) {
+  constructor(code, path, detail, fields = null) {
     super(detail);
     this.name = "PortableDataError";
     this.code = code;
     this.path = path;
+    this.fields = fields;
   }
 
   toHold() {
     return {
       code: this.code,
       path: this.path,
-      detail: this.message
+      detail: this.message,
+      ...(this.fields || {})
     };
   }
 }
@@ -35,8 +37,8 @@ function nonportable(path, detail) {
   throw new PortableDataError("HOLD_ASSEMBLY_INPUT_NONPORTABLE_VALUE", path, detail);
 }
 
-function shapeError(code, path, detail) {
-  throw new PortableDataError(code, path, detail);
+function shapeError(code, path, detail, fields = null) {
+  throw new PortableDataError(code, path, detail, fields);
 }
 
 function isPlainRecord(value) {
@@ -259,6 +261,17 @@ function clonePortableValue(value, path = "value", stack = new Set()) {
         writable: true
       });
     }
+
+    const inputMatch = /^request\.inputs\[(\d+)\]$/.exec(path);
+    if (inputMatch && out.status === "CANDIDATE" && Array.isArray(out.holds) && out.holds.length) {
+      shapeError(
+        "HOLD_INPUT_CANDIDATE_HAS_HOLDS",
+        path + ".holds",
+        "An upstream envelope cannot grant candidate authority while also carrying unresolved HOLD evidence; Assembly will not silently choose the CANDIDATE status over the authored HOLDs.",
+        { input: Number(inputMatch[1]), upstream_holds: out.holds }
+      );
+    }
+
     return out;
   } finally {
     stack.delete(value);

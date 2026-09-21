@@ -45,6 +45,16 @@ function isPlainRecord(value) {
   return prototype === Object.prototype || prototype === null;
 }
 
+function isCandidateFieldPath(path, field) {
+  const match = /^request\.inputs\[\d+\](?:\.candidate)?\.([A-Za-z_][A-Za-z0-9_]*)$/.exec(path);
+  return !!match && match[1] === field;
+}
+
+function isCandidateArrayEntryPath(path, field) {
+  const match = /^request\.inputs\[\d+\](?:\.candidate)?\.([A-Za-z_][A-Za-z0-9_]*)\[\d+\]$/.exec(path);
+  return !!match && match[1] === field;
+}
+
 function assertExactOwnKeys(value, path, allowed, code, label) {
   if (Object.getOwnPropertySymbols(value).length) {
     shapeError(code, path, label + " does not define symbol-keyed authored fields.");
@@ -106,16 +116,28 @@ function assertAssemblySemanticShape(value, path) {
     );
   }
 
-  if (value != null && /^request\.inputs\[\d+\]\.candidate\.form_hints$/.test(path) && !Array.isArray(value)) {
-    shapeError("HOLD_FORM_HINTS_SHAPE_INVALID", path, "candidate.form_hints must be an authored array of non-empty strings.");
+  // Assembly accepts both envelope-wrapped candidates (`input.candidate`) and
+  // direct candidate fragments (`candidateOf(input) === input`). Semantic
+  // container rules must follow that accepted representation boundary rather
+  // than protecting only one spelling of the same candidate matter.
+  if (value != null && isCandidateFieldPath(path, "form_hints") && !Array.isArray(value)) {
+    shapeError("HOLD_FORM_HINTS_SHAPE_INVALID", path, "candidate.form_hints must be an authored array of non-empty strings in every accepted candidate representation.");
   }
 
-  if (/^request\.inputs\[\d+\]\.candidate\.form_hints\[\d+\]$/.test(path) && (typeof value !== "string" || !value)) {
+  if (isCandidateArrayEntryPath(path, "form_hints") && (typeof value !== "string" || !value)) {
     shapeError("HOLD_FORM_HINTS_SHAPE_INVALID", path, "Every candidate.form_hints entry must be a non-empty string.");
   }
 
-  if (value != null && /^request\.inputs\[\d+\]\.candidate\.facets$/.test(path) && !isPlainRecord(value)) {
-    shapeError("HOLD_FACETS_SHAPE_INVALID", path, "candidate.facets must be an authored plain map; array indices are not facet identities.");
+  if (value != null && isCandidateFieldPath(path, "facets") && !isPlainRecord(value)) {
+    shapeError("HOLD_FACETS_SHAPE_INVALID", path, "candidate.facets must be an authored plain map in every accepted candidate representation; array indices are not facet identities.");
+  }
+
+  if (value != null && isCandidateFieldPath(path, "capabilities") && !Array.isArray(value)) {
+    shapeError(
+      "HOLD_CAPABILITIES_SHAPE_INVALID",
+      path,
+      "candidate.capabilities must be an authored array when non-null; objects, strings, and falsey primitives are not reinterpreted as omitted or iterable capability collections."
+    );
   }
 
   if (

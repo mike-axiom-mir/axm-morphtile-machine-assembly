@@ -18,6 +18,11 @@ function assertRequest(request) {
 function result(request, machine, status, fields = {}) {
   assertRequest(request);
   if (!STATUSES.has(status)) throw new Error("invalid result status");
+  const provenance = fields.provenance !== undefined
+    ? fields.provenance
+    : request.provenance !== undefined
+      ? request.provenance
+      : {};
   return {
     envelope_version: ENVELOPE_VERSION,
     request_id: request.request_id,
@@ -34,7 +39,7 @@ function result(request, machine, status, fields = {}) {
     evidence: clone(fields.evidence || []),
     warnings: clone(fields.warnings || []),
     holds: clone(fields.holds || []),
-    provenance: clone(fields.provenance || request.provenance || {}),
+    provenance: clone(provenance),
     suggested_missing_capability: fields.suggested_missing_capability || null
   };
 }

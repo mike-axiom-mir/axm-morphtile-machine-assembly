@@ -51,6 +51,15 @@ test("direct candidate form_hints use the same semantic array boundary as envelo
   );
 });
 
+test("direct candidate form_hint entries use the same non-empty-string boundary as enveloped candidates", () => {
+  expectHoldWithoutThrow(
+    tile({ form_hints: [0] }),
+    "direct-form-hints-entry",
+    "HOLD_FORM_HINTS_SHAPE_INVALID",
+    "request.inputs[0].form_hints[0]"
+  );
+});
+
 test("direct candidate facet maps cannot inherit array index semantics", () => {
   expectHoldWithoutThrow(
     tile({ facets: [{ type: "primitive", source: null, data: { shape: "box", size: [1, 1, 1] } }] }),

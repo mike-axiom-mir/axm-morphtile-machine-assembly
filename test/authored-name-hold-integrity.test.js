@@ -25,9 +25,26 @@ test("authored Assembly intent.name is not rewritten by truthiness or admitted a
     assert.equal(out.status, "HOLD", label);
     const hold = out.holds.find((item) => item.code === "HOLD_ASSEMBLY_NAME_INVALID");
     assert.ok(hold, label);
-    assert.deepEqual(hold.value, value, label);
+    assert.equal(hold.path, "request.intent.name", label);
+    assert.match(hold.detail, /authored Assembly name must be a non-empty string/, label);
     assert.equal(JSON.stringify(request), before, label);
   }
+});
+
+test("absent Assembly name keeps the established default while a valid authored name survives exactly", () => {
+  const absent = copy(baseRequest);
+  absent.request_id = "assembly-name-absent-control";
+  delete absent.intent.name;
+  const absentOut = run(absent);
+  assert.equal(absentOut.status, "CANDIDATE");
+  assert.equal(absentOut.candidate.name, "Assembled candidate");
+
+  const authored = copy(baseRequest);
+  authored.request_id = "assembly-name-authored-control";
+  authored.intent.name = "Authored tile name";
+  const authoredOut = run(authored);
+  assert.equal(authoredOut.status, "CANDIDATE");
+  assert.equal(authoredOut.candidate.name, "Authored tile name");
 });
 
 test("upstream HOLD collections fail closed when authored with a non-array container", () => {

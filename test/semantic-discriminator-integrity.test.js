@@ -74,6 +74,28 @@ test("structured Interface operation discriminator HOLDs before property-key coe
   assert.equal(out.holds.some((hold) => hold.code === "HOLD_INTERFACE_OPERATIONS_SHAPE_INVALID"), true);
 });
 
+test("inherited-looking Interface operation discriminator HOLDs as unknown own data", () => {
+  const request = copy(baseRequest);
+  request.request_id = "prototype-looking-interface-op";
+  request.intent = { id: "mt_proto_op", name: "Prototype-looking op proof" };
+  request.inputs[0].candidate.form_hints.push("ui_panel");
+  request.inputs.push({
+    status: "CANDIDATE",
+    candidate: {
+      schema: "morphtile.interface-operations/v0.4",
+      operations: [
+        { op: "__proto__", id: "mt_proto_op", view: { title: "No inherited dispatch" } },
+        { op: "presentation.set", id: "mt_proto_op", presentation: { mode: "screen" } }
+      ]
+    }
+  });
+
+  let out;
+  assert.doesNotThrow(() => { out = run(request); });
+  assert.equal(out.status, "HOLD");
+  assert.equal(out.holds.some((hold) => hold.code === "HOLD_INTERFACE_OPERATIONS_SHAPE_INVALID"), true);
+});
+
 test("structured Interface proof dependency id becomes UNSATISFIED without String coercion", () => {
   const dependency = {
     id: nullProtoStructured("proof-id"),

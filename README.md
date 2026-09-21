@@ -111,7 +111,7 @@ Round-10 current-receiver lane:
 - Interface Machine: `1a941f8ff88ca590952571e3eeeeeeef6daefd77`
 - MorphTile core: `2bdf8eade1376055473b9cc1b11734b72a5566e5`
 
-Round-19 current-merged receiver candidate lane:
+Round-19 integrated receiver lane:
 
 - Form Machine: `dd6975f29390e3175642a7d510b3c5320415b620`
 - Surface Machine: `4e4495182aa83e5dfba37722fc3756a70cfaafaa`
@@ -119,7 +119,17 @@ Round-19 current-merged receiver candidate lane:
 - Interface Machine: `8516da3a414c416ec1f76b1078901c56c49b04db`
 - MorphTile core: `2bdf8eade1376055473b9cc1b11734b72a5566e5`
 
-The round-19 receiver proof specifically checks that current Surface base-color-only authorship stays free of invented `paint`, current Interface repeat-local relational comparisons survive complete Assembly/kit transport and evaluate from lexical repeat scope, Capability `count=3` closes the Interface readout proof, current Form output compiles as finite geometry, and fresh-world rendering remains structurally read-only.
+The round-19 receiver proof checks that Surface base-color-only authorship stays free of invented `paint`, Interface repeat-local relational comparisons survive complete Assembly/kit transport and evaluate from lexical repeat scope, Capability `count=3` closes the Interface readout proof, Form output compiles as finite geometry, and fresh-world rendering remains structurally read-only.
+
+Round-22 current-fleet candidate lane:
+
+- Form Machine: `d4da0515c290b0b504c02b9d29e974d3add4e6b5`
+- Surface Machine: `4e4495182aa83e5dfba37722fc3756a70cfaafaa`
+- Capability Machine: `edc07af182ee26ca1ceb64b5d5205591ec6aca9d`
+- Interface Machine: `96dfea316216922dffca872ec083a549e4777c96`
+- MorphTile core: `2bdf8eade1376055473b9cc1b11734b72a5566e5`
+
+The round-22 proof re-earns the newer integrated Form definition-setting grid position representation through Assembly closure, a real MorphTile kit, verified fresh-world import and runtime compile. It preserves active X/Z position expressions, the inactive Y position constant, X-only definition-setting width progression, current Surface/Capability/Interface matter, six finite compiled recipe parts, and structurally read-only Interface rendering from canonical `count=3`.
 
 These checkouts are evidence only; sibling repositories and MorphTile core are not runtime dependencies of Assembly. When a sibling contract is integrated or MorphTile core moves, Assembly must re-earn compatibility against the new exact heads rather than infer it. An unmerged sibling candidate is inspectable evidence, never automatic authority.
 
@@ -133,11 +143,11 @@ Node 18 or later; zero third-party runtime dependencies; no secrets or network r
 
 ## Truth boundary
 
-- IMPLEMENTED ON MAIN: deterministic tile/facet/capability folding, fail-closed upstream-envelope handling, exact request/intent grammar, semantic container validation, authored-presence source tracing, request/input closure collection, source provenance, upstream-warning preservation, canonical closure hashing, exact addressed Interface view/presentation folding, schema gating, source-integrity preflight, lossless conflict evidence, named own-key world closure, generic own-key candidate merge identity, and runtime-backed MorphTile kit materialization with bounded local Interface proof discharge.
-- CANDIDATE ON PR #33: separately pinned round-19 receiver evidence against exact current integrated Form/Surface/Capability/Interface/MorphTile heads. This candidate changes receiver evidence/documented truth, not Assembly runtime semantics.
-- PINNED TEST HARNESS: historical exact receipts plus separately pinned round-8, round-10, and round-19 receiver lanes are checked out in CI.
+- IMPLEMENTED ON MAIN: deterministic tile/facet/capability folding, fail-closed upstream-envelope handling, exact request/intent grammar, semantic container validation across wrapped and direct candidate paths, authored-presence source tracing, request/input closure collection, source provenance, upstream-warning preservation, canonical closure hashing, exact addressed Interface view/presentation folding, schema gating, source-integrity preflight, lossless conflict evidence, named own-key world closure, generic own-key candidate merge identity, and runtime-backed MorphTile kit materialization with bounded local Interface proof discharge.
+- CURRENT CANDIDATE: separately pinned round-22 receiver evidence against the exact current integrated Form/Surface/Capability/Interface/MorphTile heads. This candidate changes receiver evidence, CI pins and documented truth, not Assembly runtime semantics.
+- PINNED TEST HARNESS: historical exact receipts plus separately pinned round-8, round-10, round-19, and round-22 receiver lanes are checked out in CI.
 - EXPERIMENTAL: envelope v0.1, `world_requirements`, `required_definitions`, `source_provenance`, `held_candidates`, `closure_hash`, and candidate schemas in this repository.
 - NOT CLAIMED: compatibility outside pinned revisions, unmerged sibling semantics, arbitrary new MorphTile facet vocabulary, arbitrary operation composition, automatic definition discovery/fetch, automatic `ui_panel` invention, visual quality, automatic CANON, or merge authority.
-- HELD: unresolved arbitrary dependency transport through MorphTile kits, any conflict auto-resolution policy, Interface #27 until its independent verification path is corrected/completed, and MorphTile core #17's separately owned repeat-text lexical-scope gap.
+- HELD: final exact-head/PR replay and independent Verification of the current Assembly candidate; Interface PR #29 until its independent exact-head Verification; unresolved arbitrary dependency transport through MorphTile kits; any conflict auto-resolution policy; MorphTile core #17's separately owned repeat-text lexical-scope gap; and presentation z-order until a canonical core primitive/schema exists.
 
 This is candidate machinery, not automatic canon and not evidence that MorphTile can autonomously manufacture MorphTile.

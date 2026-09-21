@@ -21,7 +21,7 @@ function upstreamEnvelope() {
       value: {
         type: "primitive",
         source: null,
-        data: { color: [0.2, 0.3, 0.4] }
+        data: { color: [0.3, 0.4, 0.5] }
       }
     }
   };

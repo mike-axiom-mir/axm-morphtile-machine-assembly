@@ -70,6 +70,14 @@ function assertAssemblySemanticShape(value, path) {
     assertExactOwnKeys(value, path, REQUEST_INTENT_FIELDS, "HOLD_REQUEST_INTENT_FIELD_UNSUPPORTED", "Assembly v0.1 request.intent grammar");
   }
 
+  if (path === "request.intent.name" && (typeof value !== "string" || !value)) {
+    shapeError(
+      "HOLD_ASSEMBLY_NAME_INVALID",
+      path,
+      "An authored Assembly name must be a non-empty string; invalid authored presence is not name omission and will not be rewritten to the default candidate name."
+    );
+  }
+
   if (path === "request.inputs" && !Array.isArray(value)) {
     shapeError("HOLD_INPUTS_SHAPE_INVALID", path, "Assembly request.inputs must be an authored array; Assembly will not inherit iterable/string container semantics.");
   }
@@ -88,6 +96,14 @@ function assertAssemblySemanticShape(value, path) {
 
   if (value != null && /^request\.inputs\[\d+\]\.warnings$/.test(path) && !Array.isArray(value)) {
     shapeError("HOLD_WARNINGS_SHAPE_INVALID", path, "Upstream warning collections must be authored arrays.");
+  }
+
+  if (value != null && /^request\.inputs\[\d+\]\.holds$/.test(path) && !Array.isArray(value)) {
+    shapeError(
+      "HOLD_HOLDS_SHAPE_INVALID",
+      path,
+      "Upstream HOLD collections must be authored arrays; falsey values, objects, and strings are not reinterpreted as omitted or iterable HOLD evidence."
+    );
   }
 
   if (value != null && /^request\.inputs\[\d+\]\.candidate\.form_hints$/.test(path) && !Array.isArray(value)) {

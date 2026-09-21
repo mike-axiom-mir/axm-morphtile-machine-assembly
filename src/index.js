@@ -514,7 +514,7 @@ function collectSourceProvenance(inputs) {
       machine: input && input.machine ? clone(input.machine) : null,
       request_id: input && input.request_id ? input.request_id : null,
       candidate_schema: candidate && candidate.schema ? candidate.schema : null,
-      provenance: input && input.provenance ? clone(input.provenance) : null
+      provenance: input && hasOwn(input, "provenance") ? clone(input.provenance) : null
     };
   });
 }

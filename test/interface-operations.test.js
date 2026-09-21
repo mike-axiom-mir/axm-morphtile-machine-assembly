@@ -39,6 +39,13 @@ function requestWithBundle() {
   return request;
 }
 
+function currentInterfaceRequest() {
+  const request = requestWithBundle();
+  request.inputs[2].machine.version = "0.5.14";
+  request.inputs[2].candidate.schema = "morphtile.interface-operations/v0.5";
+  return request;
+}
+
 test("folds the exact current Interface view.set + presentation.set bundle", () => {
   const out = run(requestWithBundle());
   assert.equal(out.status, "CANDIDATE", JSON.stringify(out.holds));
@@ -47,6 +54,50 @@ test("folds the exact current Interface view.set + presentation.set bundle", () 
   assert.deepEqual(out.candidate.presentation, { mode: "docked", dock: "right", preferred_size: [360, 640], user_adjustable: true });
   assert.equal(out.source_provenance[2].candidate_schema, "morphtile.interface-operations/v0.4");
   assert.equal(out.warnings.filter((item) => item.code === "UPSTREAM_WARNING" && item.input === 2).length, 2);
+});
+
+test("folds a valid current v0.5 mode-owned presentation bundle", () => {
+  const out = run(currentInterfaceRequest());
+  assert.equal(out.status, "CANDIDATE", JSON.stringify(out.holds));
+  assert.deepEqual(out.candidate.presentation, { mode: "docked", dock: "right", preferred_size: [360, 640], user_adjustable: true });
+  assert.equal(out.source_provenance[2].candidate_schema, "morphtile.interface-operations/v0.5");
+});
+
+test("current v0.5 authored null presentation fields HOLD instead of becoming pseudo-omission", () => {
+  const cases = [
+    ["dock", { mode: "docked", dock: null }],
+    ["preferred_size", { mode: "screen", preferred_size: null }],
+    ["preferred_position", { mode: "screen", preferred_position: null }],
+    ["user_adjustable", { mode: "screen", user_adjustable: null }],
+    ["anchor", { mode: "tile", anchor: null }]
+  ];
+
+  for (const [field, presentation] of cases) {
+    const request = currentInterfaceRequest();
+    request.inputs[2].candidate.operations[1].presentation = presentation;
+    const out = run(request);
+    assert.equal(out.status, "HOLD", `${field} should reject authored null`);
+    const hold = out.holds.find((item) => item.code === "HOLD_INTERFACE_OPERATIONS_SHAPE_INVALID");
+    assert.ok(hold, `${field} should fail in the Interface operation contract before later closure`);
+    assert.match(hold.detail, new RegExp(`presentation\\.${field}`));
+  }
+});
+
+test("current v0.5 presentation mode ownership fails closed before later closure", () => {
+  const cases = [
+    ["dock", { mode: "screen", dock: "left" }, /consumed only by docked/],
+    ["anchor", { mode: "screen", anchor: "mt_interface_bundle" }, /consumed only by tile/]
+  ];
+
+  for (const [field, presentation, detail] of cases) {
+    const request = currentInterfaceRequest();
+    request.inputs[2].candidate.operations[1].presentation = presentation;
+    const out = run(request);
+    assert.equal(out.status, "HOLD", `${field} should remain owned by its consuming presentation mode`);
+    const hold = out.holds.find((item) => item.code === "HOLD_INTERFACE_OPERATIONS_SHAPE_INVALID");
+    assert.ok(hold, `${field} should fail in the Interface operation contract before later closure`);
+    assert.match(hold.detail, detail);
+  }
 });
 
 test("holds a valid bundle when compatible matter never declared ui_panel", () => {

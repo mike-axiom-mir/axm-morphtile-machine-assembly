@@ -47,5 +47,3 @@ test("explicit result provenance override also uses presence rather than truthin
     assert.deepEqual(out.provenance, provenance, `override=${JSON.stringify(provenance)}`);
   }
 });
-
-test.todo("source_provenance malformed machine/request_id trace identity still needs its own bounded policy; authored upstream provenance and candidate schema presence are covered separately");

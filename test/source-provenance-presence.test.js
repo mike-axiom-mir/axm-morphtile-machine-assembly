@@ -71,7 +71,37 @@ test("source_provenance preserves authored falsey candidate schema identity on H
   }
 });
 
-test("the bounded source-trace repair does not redefine machine/request_id identity policy", () => {
+test("source_provenance preserves authored falsey upstream machine and request identity by presence", () => {
+  for (const [label, machine, requestId] of [
+    ["false", false, false],
+    ["zero", 0, 0],
+    ["empty", "", ""]
+  ]) {
+    const input = candidateInput({ producer: "source-identity-presence-proof" });
+    input.machine = machine;
+    input.request_id = requestId;
+
+    const out = assemble(input, `source-identity-${label}`);
+
+    assert.equal(out.status, "CANDIDATE", JSON.stringify(out.holds));
+    assert.deepEqual(out.source_provenance[0].machine, machine, label);
+    assert.deepEqual(out.source_provenance[0].request_id, requestId, label);
+  }
+});
+
+test("source_provenance uses null only when upstream machine or request identity is absent", () => {
+  const input = candidateInput({ producer: "source-identity-absence-proof" });
+  delete input.machine;
+  delete input.request_id;
+
+  const out = assemble(input, "source-identity-absent");
+
+  assert.equal(out.status, "CANDIDATE", JSON.stringify(out.holds));
+  assert.equal(out.source_provenance[0].machine, null);
+  assert.equal(out.source_provenance[0].request_id, null);
+});
+
+test("source identity trace preservation does not invent an upstream validity policy", () => {
   const input = candidateInput(false);
   input.machine = { id: "axm.test.producer", version: "1" };
   input.request_id = "upstream-source-provenance";

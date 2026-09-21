@@ -64,22 +64,38 @@ function assertUpstreamEnvelopeIdentity(value, path) {
   const statusDescriptor = ownDataDescriptor(value, "status");
   if (!statusDescriptor || typeof statusDescriptor.value !== "string") return;
 
-  const requestIdDescriptor = ownDataDescriptor(value, "request_id");
+  const requestIdOwn = Object.getOwnPropertyDescriptor(value, "request_id");
+  const machineOwn = Object.getOwnPropertyDescriptor(value, "machine");
+
+  // Existing Assembly compatibility accepts older status-bearing envelopes that
+  // predate source identity fields entirely. Do not silently revoke that lane.
+  // Once either identity field is authored, however, the pair claims source
+  // identity and must be complete and valid rather than truthiness-normalized.
+  if (!requestIdOwn && !machineOwn) return;
+
+  // Accessors remain a portability failure handled by the normal clone walk;
+  // do not execute them or relabel that established boundary as identity shape.
+  if ((requestIdOwn && !("value" in requestIdOwn)) || (machineOwn && !("value" in machineOwn))) return;
+
+  const requestIdDescriptor = requestIdOwn || null;
   if (!requestIdDescriptor || typeof requestIdDescriptor.value !== "string" || !requestIdDescriptor.value) {
     shapeError(
       "HOLD_INPUT_REQUEST_ID_INVALID",
       path + ".request_id",
-      "A status-bearing upstream machine envelope must carry a non-empty string request_id; malformed authored identity is not source omission."
+      "Once a status-bearing upstream envelope authors source identity, request_id must be a non-empty string; malformed authored identity is not source omission."
     );
   }
 
-  const machineDescriptor = ownDataDescriptor(value, "machine");
+  const machineDescriptor = machineOwn || null;
   const machine = machineDescriptor && machineDescriptor.value;
-  if (!machine || typeof machine !== "object" || Array.isArray(machine) || isProxy(machine) || !isPlainRecord(machine)) {
+  if (machine && typeof machine === "object" && isProxy(machine)) {
+    nonportable(path + ".machine", "Assembly input uses a Proxy object whose traps could execute during authored-data inspection.");
+  }
+  if (!machine || typeof machine !== "object" || Array.isArray(machine) || !isPlainRecord(machine)) {
     shapeError(
       "HOLD_INPUT_MACHINE_INVALID",
       path + ".machine",
-      "A status-bearing upstream machine envelope must carry a plain machine identity map with non-empty string id and version fields."
+      "Once a status-bearing upstream envelope authors source identity, machine must be a plain map with non-empty string id and version fields."
     );
   }
 
@@ -92,7 +108,7 @@ function assertUpstreamEnvelopeIdentity(value, path) {
     shapeError(
       "HOLD_INPUT_MACHINE_INVALID",
       path + ".machine",
-      "A status-bearing upstream machine envelope must carry a plain machine identity map with non-empty string id and version fields."
+      "Once a status-bearing upstream envelope authors source identity, machine must be a plain map with non-empty string id and version fields."
     );
   }
 }
@@ -138,10 +154,10 @@ function assertAssemblySemanticShape(value, path) {
     if (!isPlainRecord(value)) {
       shapeError("HOLD_INPUT_SHAPE_INVALID", path, "Each Assembly input entry must be an authored plain object.");
     }
-    // A status-bearing input claims the provisional machine-result envelope,
-    // not merely legacy candidate matter. Its source identity therefore has a
-    // validity contract in addition to source-trace presence semantics. Read
-    // descriptors only, so accessors cannot execute while establishing it.
+    // A status-bearing input claims provisional machine-result semantics. Older
+    // status-only envelopes remain accepted, but once source identity is authored
+    // its request/machine pair has a validity contract in addition to trace
+    // presence semantics. Descriptor reads avoid executing accessors.
     assertUpstreamEnvelopeIdentity(value, path);
   }
 

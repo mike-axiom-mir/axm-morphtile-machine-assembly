@@ -362,6 +362,128 @@ function resolveKitDependencies(assemblyResult, runtime, stagedWorld) {
   return { receipts, unresolved, unsatisfied };
 }
 
+function inspectImportPlanCoverage(runtime, receiverBeforeImport, kit, operations) {
+  const own = (container, key) => Boolean(container && typeof container === "object" && !Array.isArray(container) && Object.prototype.hasOwnProperty.call(container, key));
+  const expected = {
+    tile: kit && kit.tile && typeof kit.tile.id === "string" && kit.tile.id ? [kit.tile.id] : [],
+    definitions: Object.keys((kit && kit.defs) || {}).sort(),
+    words: Object.keys((kit && kit.words) || {}).sort()
+  };
+  const counts = { tile: new Map(), definitions: new Map(), words: new Map() };
+  const changed = { tile: [], definitions: [], words: [] };
+  const unexpected = { tile: [], definitions: [], words: [] };
+
+  const increment = (map, id) => map.set(id, (map.get(id) || 0) + 1);
+  const normalizeWord = (id, value) => ({
+    name: id,
+    args: clone((value && value.args) || []),
+    body: clone(value && value.body),
+    note: value && value.note ? value.note : null
+  });
+  const normalizeDefinition = (id, value) => ({
+    id,
+    name: value && value.name ? value.name : id,
+    body: clone(value && value.body),
+    created_by: value && value.created_by ? value.created_by : "human"
+  });
+  const normalizeTile = (value) => {
+    const out = clone(value);
+    if (out && out.provenance && typeof out.provenance === "object" && !Array.isArray(out.provenance)) delete out.provenance.sha256;
+    return out;
+  };
+
+  for (let operationIndex = 0; operationIndex < operations.length; operationIndex += 1) {
+    const operation = operations[operationIndex];
+    if (!operation || typeof operation !== "object" || Array.isArray(operation)) continue;
+
+    if (operation.op === "word.define" && typeof operation.name === "string" && operation.name) {
+      const id = operation.name;
+      if (!expected.words.includes(id)) {
+        unexpected.words.push({ id, operation_index: operationIndex });
+        continue;
+      }
+      increment(counts.words, id);
+      const expectedSha = runtime.hashOf(normalizeWord(id, kit.words[id]));
+      const plannedSha = runtime.hashOf(normalizeWord(id, operation));
+      if (expectedSha !== plannedSha) changed.words.push({ id, operation_index: operationIndex, expected_sha256: expectedSha, planned_sha256: plannedSha });
+      continue;
+    }
+
+    if (operation.op === "def.put" && typeof operation.id === "string" && operation.id) {
+      const id = operation.id;
+      if (!expected.definitions.includes(id)) {
+        unexpected.definitions.push({ id, operation_index: operationIndex });
+        continue;
+      }
+      increment(counts.definitions, id);
+      const expectedSha = runtime.hashOf(normalizeDefinition(id, kit.defs[id]));
+      const plannedSha = runtime.hashOf(normalizeDefinition(id, {
+        name: operation.name,
+        body: operation.body,
+        created_by: operation.by
+      }));
+      if (expectedSha !== plannedSha) changed.definitions.push({ id, operation_index: operationIndex, expected_sha256: expectedSha, planned_sha256: plannedSha });
+      continue;
+    }
+
+    if (operation.op === "tile.add" && (operation.in || "") === "" && operation.tile && typeof operation.tile.id === "string" && operation.tile.id) {
+      const id = operation.tile.id;
+      if (!expected.tile.includes(id)) {
+        unexpected.tile.push({ id, operation_index: operationIndex });
+        continue;
+      }
+      increment(counts.tile, id);
+      const expectedSha = runtime.hashOf(normalizeTile(kit.tile));
+      const plannedSha = runtime.hashOf(normalizeTile(operation.tile));
+      if (expectedSha !== plannedSha) changed.tile.push({ id, operation_index: operationIndex, expected_sha256: expectedSha, planned_sha256: plannedSha });
+    }
+  }
+
+  const preexisting = { definitions: [], words: [] };
+  const missing = { tile: [], definitions: [], words: [] };
+  const duplicates = { tile: [], definitions: [], words: [] };
+
+  for (const id of expected.words) {
+    const count = counts.words.get(id) || 0;
+    if (count > 1) duplicates.words.push({ id, count });
+    if (count) continue;
+    if (own(receiverBeforeImport && receiverBeforeImport.words, id) && runtime.hashOf(normalizeWord(id, receiverBeforeImport.words[id])) === runtime.hashOf(normalizeWord(id, kit.words[id]))) {
+      preexisting.words.push(id);
+    } else {
+      missing.words.push(id);
+    }
+  }
+
+  for (const id of expected.definitions) {
+    const count = counts.definitions.get(id) || 0;
+    if (count > 1) duplicates.definitions.push({ id, count });
+    if (count) continue;
+    if (own(receiverBeforeImport && receiverBeforeImport.defs, id) && runtime.hashOf(receiverBeforeImport.defs[id] && receiverBeforeImport.defs[id].body) === runtime.hashOf(kit.defs[id] && kit.defs[id].body)) {
+      preexisting.definitions.push(id);
+    } else {
+      missing.definitions.push(id);
+    }
+  }
+
+  for (const id of expected.tile) {
+    const count = counts.tile.get(id) || 0;
+    if (count > 1) duplicates.tile.push({ id, count });
+    if (!count) missing.tile.push(id);
+  }
+
+  const incomplete = missing.tile.length || missing.definitions.length || missing.words.length || changed.tile.length || changed.definitions.length || changed.words.length || unexpected.tile.length || unexpected.definitions.length || unexpected.words.length || duplicates.tile.length || duplicates.definitions.length || duplicates.words.length;
+  return {
+    status: incomplete ? "UNSATISFIED" : "SATISFIED",
+    plan_sha256: runtime.hashOf(operations),
+    expected,
+    preexisting,
+    missing,
+    changed,
+    unexpected,
+    duplicates
+  };
+}
+
 function inspectReceiverClosure(runtime, receiver, operations) {
   const own = (container, key) => Boolean(container && typeof container === "object" && !Array.isArray(container) && Object.prototype.hasOwnProperty.call(container, key));
   const missing = { tile: [], definitions: [], words: [] };
@@ -586,6 +708,7 @@ function materializeKit(assemblyResult, runtime, options = {}) {
   };
 
   const receiver = runtime.createWorld(options.receiver_world_name || "Assembly kit receiver");
+  const receiverBeforeImport = clone(receiver);
   const checked = runtime.importKit(receiver, clone(kit));
   if (!checked || checked.status !== "READY") {
     return hold("HOLD_KIT_RUNTIME_REJECTED", "The supplied MorphTile runtime did not accept the generated kit as READY.", {
@@ -606,6 +729,16 @@ function materializeKit(assemblyResult, runtime, options = {}) {
       dependency_resolution: dependencyResolution.receipts,
       runtime_contract: contract,
       hold: { runtime_status: checked.status }
+    });
+  }
+
+  const planCoverage = inspectImportPlanCoverage(runtime, receiverBeforeImport, kit, checked.ops);
+  if (planCoverage.status !== "SATISFIED") {
+    return hold("HOLD_KIT_RUNTIME_IMPORT_PLAN_INCOMPLETE", "The supplied MorphTile runtime reported READY, but its ordered import plan does not cover the declared kit words, definitions, and root tile without omission, substitution, unexpected matter, or duplicate authority.", {
+      ...trace,
+      dependency_resolution: dependencyResolution.receipts,
+      runtime_contract: contract,
+      hold: { plan_coverage: planCoverage }
     });
   }
 
@@ -648,6 +781,7 @@ function materializeKit(assemblyResult, runtime, options = {}) {
       { kind: "TILE", status: "PASS", check: "assembly candidate materialized and validateTile accepted it" },
       { kind: "KIT_HASH", status: "PASS", check: "kit expect.sha256 uses the supplied MorphTile runtime hashOf over tile + defs + words; Assembly provenance, warnings and discharged-proof receipts remain sidecars outside portable content identity" },
       { kind: "KIT_IMPORT", status: "PASS", check: "fresh-world importKit returned READY without overwrite or partial mode" },
+      { kind: "KIT_IMPORT_PLAN_COVERAGE", status: "PASS", check: `READY plan ${planCoverage.plan_sha256} covers every declared kit word, definition, and root tile exactly once unless the runtime proved the named word/definition already existed compatibly before planning` },
       { kind: "KIT_APPLY", status: "PASS", check: `all ${checked.ops.length} READY import operations executed in order against the isolated fresh receiver` },
       { kind: "KIT_RECEIVER_CLOSURE", status: "PASS", check: `all ${receiverClosure.verified_operations} READY operation postconditions are present exactly in the isolated fresh receiver; plan ${receiverClosure.plan_sha256}` }
     ],
@@ -662,6 +796,7 @@ module.exports = {
   resolveInterfaceTargetProof,
   resolvePresentationAnchorProof,
   resolveKitDependencies,
+  inspectImportPlanCoverage,
   inspectReceiverClosure,
   materializeKit
 };

@@ -2,6 +2,18 @@
 
 const { types: { isProxy } } = require("node:util");
 
+const REQUEST_FIELDS = new Set([
+  "envelope_version",
+  "request_id",
+  "goal",
+  "intent",
+  "inputs",
+  "dependencies",
+  "world_requirements",
+  "provenance"
+]);
+const REQUEST_INTENT_FIELDS = new Set(["id", "name", "tile_path"]);
+
 class PortableDataError extends Error {
   constructor(code, path, detail) {
     super(detail);
@@ -33,7 +45,31 @@ function isPlainRecord(value) {
   return prototype === Object.prototype || prototype === null;
 }
 
+function assertExactOwnKeys(value, path, allowed, code, label) {
+  if (Object.getOwnPropertySymbols(value).length) {
+    shapeError(code, path, label + " does not define symbol-keyed authored fields.");
+  }
+  const unexpected = Object.getOwnPropertyNames(value).filter((name) => !allowed.has(name)).sort();
+  if (unexpected.length) {
+    shapeError(code, path + "." + unexpected[0], label + " does not define this authored field.");
+  }
+}
+
 function assertAssemblySemanticShape(value, path) {
+  if (path === "request") {
+    if (!isPlainRecord(value)) {
+      shapeError("HOLD_REQUEST_SHAPE_INVALID", path, "Assembly request must be an authored plain object.");
+    }
+    assertExactOwnKeys(value, path, REQUEST_FIELDS, "HOLD_REQUEST_FIELD_UNSUPPORTED", "Assembly v0.1 request grammar");
+  }
+
+  if (value != null && path === "request.intent") {
+    if (!isPlainRecord(value)) {
+      shapeError("HOLD_REQUEST_INTENT_SHAPE_INVALID", path, "Assembly request.intent must be an authored plain map when present; null retains the established omitted-field meaning.");
+    }
+    assertExactOwnKeys(value, path, REQUEST_INTENT_FIELDS, "HOLD_REQUEST_INTENT_FIELD_UNSUPPORTED", "Assembly v0.1 request.intent grammar");
+  }
+
   if (path === "request.inputs" && !Array.isArray(value)) {
     shapeError("HOLD_INPUTS_SHAPE_INVALID", path, "Assembly request.inputs must be an authored array; Assembly will not inherit iterable/string container semantics.");
   }
@@ -91,9 +127,11 @@ function clonePortableValue(value, path = "value", stack = new Set()) {
   }
 
   // Portability and semantic container identity are separate promises. A value
-  // can be JSON-portable while still being the wrong authored container type.
+  // can be JSON-portable while still be the wrong authored container type.
   // Reject those shapes before host iteration/Object.keys semantics can silently
-  // reinterpret strings, arrays or objects as another Assembly grammar.
+  // reinterpret strings, arrays or objects as another Assembly grammar. Exact
+  // request/intent grammars also account for every own key before field selection
+  // so future authored meaning cannot silently collapse into omission.
   assertAssemblySemanticShape(value, path);
 
   if (value === null || typeof value === "string" || typeof value === "boolean") return value;

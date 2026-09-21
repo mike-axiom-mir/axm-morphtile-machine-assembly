@@ -21,10 +21,10 @@ const commits = {
   core: process.env.CURRENT_MORPHTILE_COMMIT
 };
 const expected = {
-  form: "a13e495c61e911ef1382512b4532ddf26fdcc080",
+  form: "e551c53f642ceaa77c89dcd5b907c95fd59463dc",
   surface: "4e4495182aa83e5dfba37722fc3756a70cfaafaa",
   capability: "edc07af182ee26ca1ceb64b5d5205591ec6aca9d",
-  interface: "58ccd3e05e63f18e9ad081a75bbce5e78edd28c8",
+  interface: "ec92507b82d855de49ba024ecfdd32aada24b186",
   core: "2bdf8eade1376055473b9cc1b11734b72a5566e5"
 };
 const ready = Object.values(paths).every(Boolean);

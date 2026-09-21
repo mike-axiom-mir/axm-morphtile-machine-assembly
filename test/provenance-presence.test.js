@@ -48,4 +48,4 @@ test("explicit result provenance override also uses presence rather than truthin
   }
 });
 
-test.todo("source_provenance trace needs its own bounded presence policy for falsey upstream provenance/schema identity without guessing malformed machine/request_id policy");
+test.todo("source_provenance candidate-schema and malformed machine/request_id trace identity need their own bounded policy; authored falsey upstream provenance is covered separately");

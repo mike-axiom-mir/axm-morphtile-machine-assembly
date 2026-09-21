@@ -47,6 +47,7 @@ runtimeTest("complete receiver application proof keeps an ordinary portable word
 
   assert.equal(materialized.status, "CANDIDATE", JSON.stringify(materialized.holds));
   assert.equal(materialized.evidence.some((entry) => entry.kind === "KIT_APPLY" && entry.status === "PASS"), true);
+  assert.equal(materialized.evidence.some((entry) => entry.kind === "KIT_RECEIVER_CLOSURE" && entry.status === "PASS"), true);
   assert.equal(materialized.kit.words.ease.name, "ease");
 });
 
@@ -65,4 +66,27 @@ runtimeTest("kit materialization HOLDS when READY operations return without inst
   assert.equal(materialized.status, "HOLD");
   assert.equal(materialized.kit, null);
   assert.equal(materialized.holds[0].code, "HOLD_KIT_RUNTIME_RECEIVER_INCOMPLETE");
+  assert.deepEqual(materialized.holds[0].receiver_closure.missing.words, ["ease"]);
+  assert.deepEqual(materialized.holds[0].receiver_closure.missing.tile, ["mt_kit_application_proof"]);
+});
+
+runtimeTest("kit materialization HOLDS when a READY plan installs the tile but silently drops a declared word", () => {
+  const MT = require(path.resolve(runtimePath));
+  const assembled = run(requestWithWords({
+    ease: { name: "ease", args: ["x"], body: ["var", "x"], note: "partial receiver closure proof" }
+  }));
+  assert.equal(assembled.status, "CANDIDATE", JSON.stringify(assembled.holds));
+
+  const partialRuntime = Object.assign({}, MT, {
+    applyStructOp(world, operation) {
+      if (operation && operation.op === "word.define") return;
+      return MT.applyStructOp(world, operation);
+    }
+  });
+  const materialized = materializeKit(assembled, partialRuntime, { name: "Partial apply must not count as receiver closure" });
+
+  assert.equal(materialized.status, "HOLD");
+  assert.equal(materialized.holds[0].code, "HOLD_KIT_RUNTIME_RECEIVER_INCOMPLETE");
+  assert.deepEqual(materialized.holds[0].receiver_closure.missing.words, ["ease"]);
+  assert.deepEqual(materialized.holds[0].receiver_closure.missing.tile, []);
 });

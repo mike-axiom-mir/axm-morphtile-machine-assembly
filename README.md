@@ -9,8 +9,8 @@ Combines compatible machine candidates into one MorphTile tile candidate while p
 3. **What it accepts:** `axm.morphtile.assembly-request/v0.1` containing inspectable candidate packets plus optional dependency/world-requirement closure.
 4. **What it produces:** A `morphtile.tile-spec/v0.4` candidate plus dependency, world-requirement, derived required-definition, source-provenance, closure-hash, evidence, warning and HOLD fields in the provisional envelope.
 5. **MorphTile interaction:** output goes through MorphTile's public contracts and normal authority path. MorphTile does not depend on this repository.
-6. **Evidence:** deterministic compatible union, canonical object comparison, input non-mutation, lossless conflict reporting, definition-closure proof, provenance/upstream-warning preservation, upstream-HOLD propagation, addressed Interface validation, unsupported-schema HOLDs, canonical closure hashing, pinned sibling integration, and real MorphTile kit materialization/import.
-7. **When it cannot satisfy a request:** unresolved upstream state, malformed candidates, incompatible content, dependency/word/definition drift, missing referenced definitions, unbound or mismatched operations, missing `ui_panel` eligibility, unsupported schemas, and kit-unrepresentable dependencies remain explicit HOLDs.
+6. **Evidence:** deterministic compatible union, canonical object comparison, input non-mutation, lossless conflict reporting, definition-closure proof, provenance/upstream-warning preservation, upstream-HOLD propagation, addressed Interface validation, unsupported-schema HOLDs, canonical closure hashing, pinned sibling integration, and real MorphTile kit materialization/import/application.
+7. **When it cannot satisfy a request:** unresolved upstream state, malformed candidates, incompatible content, dependency/word/definition drift, missing referenced definitions, unbound or mismatched operations, missing `ui_panel` eligibility, unsupported schemas, kit-unrepresentable dependencies, or receiver-rejected import operations remain explicit HOLDs.
 
 ## Upstream truth rule
 
@@ -73,7 +73,7 @@ Assembly does **not** add `ui_panel` merely to make Interface output fit and doe
 
 `src/kit.js` can materialize a successful Assembly result through an explicitly supplied MorphTile runtime.
 
-The adapter uses MorphTile's own public `createTile`, `validateTile`, `createWorld`, `exportKit`, `importKit`, `hashOf`, `resolveTile`, and when available `needsOf`/`grantsOf` contracts. Declared words/definitions travel into the staging world and generated kit. The generated kit is accepted only after fresh-world `importKit` returns `READY`.
+The adapter uses MorphTile's own public `createTile`, `validateTile`, `createWorld`, `exportKit`, `importKit`, `applyStructOp`, `hashOf`, `resolveTile`, and when available `needsOf`/`grantsOf` contracts. Declared words/definitions travel into the staging world and generated kit. A generated kit is accepted only after fresh-world `importKit` returns `READY` **and every returned ordered import operation executes successfully against that isolated receiver**. `READY` is an import plan, not receiver completion; a missing operation list or rejected operation remains an explicit HOLD with the exact failing operation evidence preserved.
 
 Assembly's `closure_hash` and MorphTile's `kit.expect.sha256` are intentionally separate receipts. The first identifies creation-side candidate closure; the second identifies MorphTile's portable kit payload.
 
@@ -121,7 +121,7 @@ Round-19 integrated receiver lane:
 
 The round-19 receiver proof checks that Surface base-color-only authorship stays free of invented `paint`, Interface repeat-local relational comparisons survive complete Assembly/kit transport and evaluate from lexical repeat scope, Capability `count=3` closes the Interface readout proof, Form output compiles as finite geometry, and fresh-world rendering remains structurally read-only.
 
-Round-22 current-fleet candidate lane:
+Round-22 current-fleet historical lane:
 
 - Form Machine: `d4da0515c290b0b504c02b9d29e974d3add4e6b5`
 - Surface Machine: `4e4495182aa83e5dfba37722fc3756a70cfaafaa`
@@ -129,7 +129,7 @@ Round-22 current-fleet candidate lane:
 - Interface Machine: `96dfea316216922dffca872ec083a549e4777c96`
 - MorphTile core: `2bdf8eade1376055473b9cc1b11734b72a5566e5`
 
-The round-22 proof re-earns the newer integrated Form definition-setting grid position representation through Assembly closure, a real MorphTile kit, verified fresh-world import and runtime compile. It preserves active X/Z position expressions, the inactive Y position constant, X-only definition-setting width progression, current Surface/Capability/Interface matter, six finite compiled recipe parts, and structurally read-only Interface rendering from canonical `count=3`.
+The round-22 proof re-earns the integrated Form definition-setting grid position representation through Assembly closure, a real MorphTile kit, fresh-world import/application and runtime compile. It preserves active X/Z position expressions, the inactive Y position constant, X-only definition-setting width progression, current Surface/Capability/Interface matter, six finite compiled recipe parts, and structurally read-only Interface rendering from canonical `count=3`.
 
 These checkouts are evidence only; sibling repositories and MorphTile core are not runtime dependencies of Assembly. When a sibling contract is integrated or MorphTile core moves, Assembly must re-earn compatibility against the new exact heads rather than infer it. An unmerged sibling candidate is inspectable evidence, never automatic authority.
 
@@ -143,11 +143,11 @@ Node 18 or later; zero third-party runtime dependencies; no secrets or network r
 
 ## Truth boundary
 
-- IMPLEMENTED ON MAIN: deterministic tile/facet/capability folding, fail-closed upstream-envelope handling, exact request/intent grammar, semantic container validation across wrapped and direct candidate paths, authored-presence source tracing, request/input closure collection, source provenance, upstream-warning preservation, canonical closure hashing, exact addressed Interface view/presentation folding, schema gating, source-integrity preflight, lossless conflict evidence, named own-key world closure, generic own-key candidate merge identity, and runtime-backed MorphTile kit materialization with bounded local Interface proof discharge.
-- CURRENT CANDIDATE: separately pinned round-22 receiver evidence against the exact current integrated Form/Surface/Capability/Interface/MorphTile heads. This candidate changes receiver evidence, CI pins and documented truth, not Assembly runtime semantics.
+- IMPLEMENTED ON MAIN: deterministic tile/facet/capability folding, fail-closed upstream-envelope and authored-wrapper handling, exact request/intent grammar, semantic container validation across wrapped and direct candidate paths, authored-presence source tracing, request/input closure collection, source provenance, upstream-warning/HOLD preservation, canonical closure hashing, exact addressed Interface view/presentation folding, schema gating, source-integrity preflight, lossless conflict evidence, named own-key world closure, generic own-key candidate merge identity, and runtime-backed MorphTile kit materialization with bounded local Interface proof discharge.
+- CURRENT CANDIDATE: receiver-application closure for kit materialization. `importKit: READY` is no longer treated as proof of completed receiver integration; Assembly executes the exact ordered import operations against an isolated fresh receiver and HOLDS on missing or rejected operation evidence.
 - PINNED TEST HARNESS: historical exact receipts plus separately pinned round-8, round-10, round-19, and round-22 receiver lanes are checked out in CI.
 - EXPERIMENTAL: envelope v0.1, `world_requirements`, `required_definitions`, `source_provenance`, `held_candidates`, `closure_hash`, and candidate schemas in this repository.
 - NOT CLAIMED: compatibility outside pinned revisions, unmerged sibling semantics, arbitrary new MorphTile facet vocabulary, arbitrary operation composition, automatic definition discovery/fetch, automatic `ui_panel` invention, visual quality, automatic CANON, or merge authority.
-- HELD: final exact-head/PR replay and independent Verification of the current Assembly candidate; Interface PR #29 until its independent exact-head Verification; unresolved arbitrary dependency transport through MorphTile kits; any conflict auto-resolution policy; MorphTile core #17's separately owned repeat-text lexical-scope gap; and presentation z-order until a canonical core primitive/schema exists.
+- HELD: final exact-head/PR replay and independent Verification of the current Assembly candidate; unmerged sibling candidates remain outside Assembly authority; unresolved arbitrary dependency transport through MorphTile kits; any conflict auto-resolution policy; MorphTile core #17's separately owned repeat-text lexical-scope gap; and presentation z-order until a canonical core primitive/schema exists.
 
 This is candidate machinery, not automatic canon and not evidence that MorphTile can autonomously manufacture MorphTile.

@@ -48,6 +48,7 @@ runtimeTest("complete receiver application proof keeps an ordinary portable word
   assert.equal(materialized.status, "CANDIDATE", JSON.stringify(materialized.holds));
   assert.equal(materialized.evidence.some((entry) => entry.kind === "KIT_APPLY" && entry.status === "PASS"), true);
   assert.equal(materialized.evidence.some((entry) => entry.kind === "KIT_RECEIVER_CLOSURE" && entry.status === "PASS"), true);
+  assert.equal(materialized.evidence.some((entry) => entry.kind === "KIT_IMPORT_PLAN_COVERAGE" && entry.status === "PASS"), true);
   assert.equal(materialized.kit.words.ease.name, "ease");
 });
 
@@ -115,4 +116,53 @@ runtimeTest("kit materialization HOLDS when a READY import plan omits declared k
   assert.equal(materialized.holds[0].code, "HOLD_KIT_RUNTIME_IMPORT_PLAN_INCOMPLETE");
   assert.deepEqual(materialized.holds[0].plan_coverage.missing.words, ["ease"]);
   assert.deepEqual(materialized.holds[0].plan_coverage.missing.tile, []);
+});
+
+runtimeTest("kit materialization HOLDS when a READY import plan substitutes declared word semantics", () => {
+  const MT = require(path.resolve(runtimePath));
+  const assembled = run(requestWithWords({
+    ease: { name: "ease", args: ["x"], body: ["var", "x"], note: "substitution proof" }
+  }));
+  assert.equal(assembled.status, "CANDIDATE", JSON.stringify(assembled.holds));
+
+  const substitutingPlanner = Object.assign({}, MT, {
+    importKit(world, kit, opts) {
+      const checked = MT.importKit(world, kit, opts);
+      if (!checked || checked.status !== "READY") return checked;
+      return {
+        ...checked,
+        ops: checked.ops.map((operation) => operation && operation.op === "word.define"
+          ? { ...operation, body: 999 }
+          : operation)
+      };
+    }
+  });
+  const materialized = materializeKit(assembled, substitutingPlanner, { name: "Substituted READY plan must not count as declared kit semantics" });
+
+  assert.equal(materialized.status, "HOLD");
+  assert.equal(materialized.holds[0].code, "HOLD_KIT_RUNTIME_IMPORT_PLAN_INCOMPLETE");
+  assert.equal(materialized.holds[0].plan_coverage.changed.words.length, 1);
+  assert.equal(materialized.holds[0].plan_coverage.changed.words[0].id, "ease");
+});
+
+runtimeTest("kit materialization HOLDS when a READY import plan omits the declared root tile", () => {
+  const MT = require(path.resolve(runtimePath));
+  const assembled = run(requestWithWords({}));
+  assert.equal(assembled.status, "CANDIDATE", JSON.stringify(assembled.holds));
+
+  const tileDroppingPlanner = Object.assign({}, MT, {
+    importKit(world, kit, opts) {
+      const checked = MT.importKit(world, kit, opts);
+      if (!checked || checked.status !== "READY") return checked;
+      return {
+        ...checked,
+        ops: checked.ops.filter((operation) => operation && operation.op !== "tile.add")
+      };
+    }
+  });
+  const materialized = materializeKit(assembled, tileDroppingPlanner, { name: "Root tile omission must not become a complete kit" });
+
+  assert.equal(materialized.status, "HOLD");
+  assert.equal(materialized.holds[0].code, "HOLD_KIT_RUNTIME_IMPORT_PLAN_INCOMPLETE");
+  assert.deepEqual(materialized.holds[0].plan_coverage.missing.tile, ["mt_kit_application_proof"]);
 });

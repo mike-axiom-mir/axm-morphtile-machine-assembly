@@ -48,12 +48,14 @@ function parseInterfaceOperations(assembledId, assembledPath, candidate, input) 
   if (!Array.isArray(candidate.operations)) return fail(input, "interface-operations candidate.operations must be an array");
   if (candidate.operations.length !== 2) return fail(input, "current proven interface-operations contract requires exactly view.set plus presentation.set", { operation_count: candidate.operations.length });
 
-  const byType = {};
+  const byType = Object.create(null);
   for (const operation of candidate.operations) {
     if (!operation || typeof operation !== "object" || Array.isArray(operation)) return fail(input, "every interface operation must be an object");
-    if (!OPERATION_KEYS[operation.op]) return fail(input, "unsupported interface operation; only view.set and presentation.set are proven", { operation: operation.op == null ? null : String(operation.op) });
-    if (byType[operation.op]) return fail(input, "duplicate interface operation", { operation: operation.op });
-    const unknownOperation = Object.keys(operation).filter((key) => !OPERATION_KEYS[operation.op].has(key)).sort();
+    if (typeof operation.op !== "string" || !operation.op) return fail(input, "unsupported interface operation; operation op must be a non-empty string");
+    const operationKeys = Object.prototype.hasOwnProperty.call(OPERATION_KEYS, operation.op) ? OPERATION_KEYS[operation.op] : null;
+    if (!operationKeys) return fail(input, "unsupported interface operation; only view.set and presentation.set are proven", { operation: operation.op });
+    if (Object.prototype.hasOwnProperty.call(byType, operation.op)) return fail(input, "duplicate interface operation", { operation: operation.op });
+    const unknownOperation = Object.keys(operation).filter((key) => !operationKeys.has(key)).sort();
     if (unknownOperation.length) return fail(input, operation.op + " contains unsupported field(s)", { fields: unknownOperation });
     if (!isTilePath(operation.id)) return fail(input, operation.op + " target path is invalid", { target: operation.id == null ? null : operation.id });
     byType[operation.op] = operation;

@@ -69,6 +69,10 @@ function stringSet(value) {
   return [...new Set(value)].sort();
 }
 
+function stringIdentity(value) {
+  return typeof value === "string" && value ? value : null;
+}
+
 function targetFacts(candidate, runtime, stagedWorld) {
   const facts = {
     form_hints_include: new Set(),
@@ -155,7 +159,7 @@ function resolveInterfaceTargetProof(dependency, candidate, targetBinding, runti
   const proofScope = "staged_morphtile_world";
   if (malformed.length) {
     return {
-      id: dependency && dependency.id ? String(dependency.id) : null,
+      id: stringIdentity(dependency && dependency.id),
       kind: INTERFACE_TARGET_PROOF,
       status: "UNSATISFIED",
       proof_scope: proofScope,
@@ -258,7 +262,7 @@ function resolvePresentationAnchorProof(dependency, candidate, runtime, stagedWo
 
   if (malformed.length) {
     return {
-      id: dependency && dependency.id ? String(dependency.id) : null,
+      id: stringIdentity(dependency && dependency.id),
       kind: PRESENTATION_ANCHOR_PROOF,
       status: "UNSATISFIED",
       proof_scope: proofScope,

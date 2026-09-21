@@ -71,13 +71,14 @@ test("source_provenance preserves authored falsey candidate schema identity on H
   }
 });
 
-test("source_provenance preserves authored falsey upstream machine and request identity by presence", () => {
+test("status-less legacy inputs preserve unusual authored machine and request identity by presence without granting envelope validity", () => {
   for (const [label, machine, requestId] of [
     ["false", false, false],
     ["zero", 0, 0],
     ["empty", "", ""]
   ]) {
     const input = candidateInput({ producer: "source-identity-presence-proof" });
+    delete input.status;
     input.machine = machine;
     input.request_id = requestId;
 
@@ -91,6 +92,7 @@ test("source_provenance preserves authored falsey upstream machine and request i
 
 test("source_provenance uses null only when upstream machine or request identity is absent", () => {
   const input = candidateInput({ producer: "source-identity-absence-proof" });
+  delete input.status;
   delete input.machine;
   delete input.request_id;
 
@@ -101,7 +103,7 @@ test("source_provenance uses null only when upstream machine or request identity
   assert.equal(out.source_provenance[0].request_id, null);
 });
 
-test("source identity trace preservation does not invent an upstream validity policy", () => {
+test("valid status-bearing source identity remains traceable without normalization", () => {
   const input = candidateInput(false);
   input.machine = { id: "axm.test.producer", version: "1" };
   input.request_id = "upstream-source-provenance";

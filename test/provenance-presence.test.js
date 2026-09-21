@@ -47,3 +47,5 @@ test("explicit result provenance override also uses presence rather than truthin
     assert.deepEqual(out.provenance, provenance, `override=${JSON.stringify(provenance)}`);
   }
 });
+
+test.todo("source_provenance trace should preserve authored falsey upstream provenance and invalid schema values by own-key presence");

@@ -283,7 +283,18 @@ function mergeCandidate(assembled, assembledPath, input, inputIndex, conflicts, 
   if (!inspectInputEnvelope(input, inputIndex, holds)) return false;
 
   const candidate = candidateOf(input) || {};
-  const schema = candidate.schema || null;
+  const schemaAuthored = hasOwn(candidate, "schema");
+  if (schemaAuthored && (typeof candidate.schema !== "string" || !candidate.schema)) {
+    holds.push({
+      code: "HOLD_CANDIDATE_SCHEMA_INVALID",
+      input: inputIndex,
+      schema: clone(candidate.schema),
+      detail: "An authored candidate schema must be a non-empty string; explicit invalid schema values are not schema omission."
+    });
+    heldCandidates.push({ input: inputIndex, schema: clone(candidate.schema), candidate: clone(candidate) });
+    return false;
+  }
+  const schema = schemaAuthored ? candidate.schema : null;
   if (schema && !SUPPORTED_SCHEMAS.has(schema)) {
     holds.push({
       code: "HOLD_UNASSEMBLABLE_CANDIDATE_SCHEMA",
@@ -294,7 +305,7 @@ function mergeCandidate(assembled, assembledPath, input, inputIndex, conflicts, 
     heldCandidates.push({ input: inputIndex, schema, candidate: clone(candidate) });
     return false;
   }
-  if (!schema) warnings.push({ code: "LEGACY_SCHEMALESS_FRAGMENT", input: inputIndex });
+  if (!schemaAuthored) warnings.push({ code: "LEGACY_SCHEMALESS_FRAGMENT", input: inputIndex });
 
   if (VIEW_OPERATION_SCHEMAS.has(schema)) {
     return foldViewOperation(assembled, assembledPath, candidate, inputIndex, conflicts, holds, owners);
@@ -404,12 +415,15 @@ function collectWorldRequirements(request, inputs, holds) {
   const requestRequirements = request.world_requirements || {};
 
   mergeNamed(words, requestRequirements.words || {}, "word", "request", wordSources, holds);
-  mergeNamed(definitions, requestRequirements.definitions || requestRequirements.defs || {}, "definition", "request", definitionSources, holds);
+  mergeNamed(definitions, requestRequirements.definitions || {}, "definition", "request", definitionSources, holds);
+  mergeNamed(definitions, requestRequirements.defs || {}, "definition", "request.world_requirements.defs", definitionSources, holds);
 
   inputs.forEach((input, index) => {
     const req = (input && input.world_requirements) || {};
-    mergeNamed(words, req.words || {}, "word", "input[" + index + "]", wordSources, holds);
-    mergeNamed(definitions, req.definitions || req.defs || {}, "definition", "input[" + index + "]", definitionSources, holds);
+    const inputSource = "input[" + index + "]";
+    mergeNamed(words, req.words || {}, "word", inputSource, wordSources, holds);
+    mergeNamed(definitions, req.definitions || {}, "definition", inputSource, definitionSources, holds);
+    mergeNamed(definitions, req.defs || {}, "definition", inputSource + ".world_requirements.defs", definitionSources, holds);
   });
 
   const out = {};
@@ -471,6 +485,10 @@ function inspectDefinitionClosure(candidate, worldRequirements) {
     pending.delete(id);
     if (required.has(id)) continue;
     required.add(id);
+    if (!hasOwn(definitions, id)) {
+      missing.add(id);
+      continue;
+    }
     const definition = definitions[id];
     if (!definition || typeof definition !== "object" || Array.isArray(definition)) {
       missing.add(id);

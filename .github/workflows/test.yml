@@ -64,6 +64,21 @@ jobs:
           path: .siblings/round10/interface
       - uses: actions/checkout@v4
         with:
+          repository: mike-axiom-mir/axm-morphtile-machine-form
+          ref: dd6975f29390e3175642a7d510b3c5320415b620
+          path: .siblings/round19/form
+      - uses: actions/checkout@v4
+        with:
+          repository: mike-axiom-mir/axm-morphtile-machine-surface
+          ref: 4e4495182aa83e5dfba37722fc3756a70cfaafaa
+          path: .siblings/round19/surface
+      - uses: actions/checkout@v4
+        with:
+          repository: mike-axiom-mir/axm-morphtile-machine-interface
+          ref: 8516da3a414c416ec1f76b1078901c56c49b04db
+          path: .siblings/round19/interface
+      - uses: actions/checkout@v4
+        with:
           repository: mike-axiom-mir/axm-morphtile
           ref: 2bdf8eade1376055473b9cc1b11734b72a5566e5
           path: .runtime/morphtile
@@ -105,3 +120,13 @@ jobs:
           ROUND10_INTERFACE_COMMIT: 1a941f8ff88ca590952571e3eeeeeeef6daefd77
           ROUND10_MORPHTILE_CORE_PATH: ${{ github.workspace }}/.runtime/morphtile/core/morphtile.js
           ROUND10_MORPHTILE_COMMIT: 2bdf8eade1376055473b9cc1b11734b72a5566e5
+          ROUND19_FORM_MACHINE_PATH: ${{ github.workspace }}/.siblings/round19/form/src
+          ROUND19_FORM_COMMIT: dd6975f29390e3175642a7d510b3c5320415b620
+          ROUND19_SURFACE_MACHINE_PATH: ${{ github.workspace }}/.siblings/round19/surface/src
+          ROUND19_SURFACE_COMMIT: 4e4495182aa83e5dfba37722fc3756a70cfaafaa
+          ROUND19_CAPABILITY_MACHINE_PATH: ${{ github.workspace }}/.siblings/capability/src
+          ROUND19_CAPABILITY_COMMIT: edc07af182ee26ca1ceb64b5d5205591ec6aca9d
+          ROUND19_INTERFACE_MACHINE_PATH: ${{ github.workspace }}/.siblings/round19/interface/src
+          ROUND19_INTERFACE_COMMIT: 8516da3a414c416ec1f76b1078901c56c49b04db
+          ROUND19_MORPHTILE_CORE_PATH: ${{ github.workspace }}/.runtime/morphtile/core/morphtile.js
+          ROUND19_MORPHTILE_COMMIT: 2bdf8eade1376055473b9cc1b11734b72a5566e5

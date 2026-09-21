@@ -263,13 +263,25 @@ function clonePortableValue(value, path = "value", stack = new Set()) {
     }
 
     const inputMatch = /^request\.inputs\[(\d+)\]$/.exec(path);
-    if (inputMatch && out.status === "CANDIDATE" && Array.isArray(out.holds) && out.holds.length) {
-      shapeError(
-        "HOLD_INPUT_CANDIDATE_HAS_HOLDS",
-        path + ".holds",
-        "An upstream envelope cannot grant candidate authority while also carrying unresolved HOLD evidence; Assembly will not silently choose the CANDIDATE status over the authored HOLDs.",
-        { input: Number(inputMatch[1]), upstream_holds: out.holds }
-      );
+    if (inputMatch && Array.isArray(out.holds) && out.holds.length) {
+      const hasStatus = Object.prototype.hasOwnProperty.call(out, "status");
+      const input = Number(inputMatch[1]);
+      if (out.status === "CANDIDATE") {
+        shapeError(
+          "HOLD_INPUT_CANDIDATE_HAS_HOLDS",
+          path + ".holds",
+          "An upstream envelope cannot grant candidate authority while also carrying unresolved HOLD evidence; Assembly will not silently choose the CANDIDATE status over the authored HOLDs.",
+          { input, upstream_holds: out.holds }
+        );
+      }
+      if (!hasStatus) {
+        shapeError(
+          "HOLD_INPUT_DIRECT_HAS_HOLDS",
+          path + ".holds",
+          "A direct candidate fragment cannot carry unresolved HOLD evidence without an envelope status; Assembly will not use the compatibility path to make those authored HOLDs disappear.",
+          { input, upstream_holds: out.holds }
+        );
+      }
     }
 
     return out;

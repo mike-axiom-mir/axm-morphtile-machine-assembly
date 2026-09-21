@@ -404,12 +404,15 @@ function collectWorldRequirements(request, inputs, holds) {
   const requestRequirements = request.world_requirements || {};
 
   mergeNamed(words, requestRequirements.words || {}, "word", "request", wordSources, holds);
-  mergeNamed(definitions, requestRequirements.definitions || requestRequirements.defs || {}, "definition", "request", definitionSources, holds);
+  mergeNamed(definitions, requestRequirements.definitions || {}, "definition", "request", definitionSources, holds);
+  mergeNamed(definitions, requestRequirements.defs || {}, "definition", "request.world_requirements.defs", definitionSources, holds);
 
   inputs.forEach((input, index) => {
     const req = (input && input.world_requirements) || {};
-    mergeNamed(words, req.words || {}, "word", "input[" + index + "]", wordSources, holds);
-    mergeNamed(definitions, req.definitions || req.defs || {}, "definition", "input[" + index + "]", definitionSources, holds);
+    const inputSource = "input[" + index + "]";
+    mergeNamed(words, req.words || {}, "word", inputSource, wordSources, holds);
+    mergeNamed(definitions, req.definitions || {}, "definition", inputSource, definitionSources, holds);
+    mergeNamed(definitions, req.defs || {}, "definition", inputSource + ".world_requirements.defs", definitionSources, holds);
   });
 
   const out = {};
@@ -471,6 +474,10 @@ function inspectDefinitionClosure(candidate, worldRequirements) {
     pending.delete(id);
     if (required.has(id)) continue;
     required.add(id);
+    if (!hasOwn(definitions, id)) {
+      missing.add(id);
+      continue;
+    }
     const definition = definitions[id];
     if (!definition || typeof definition !== "object" || Array.isArray(definition)) {
       missing.add(id);

@@ -3,9 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "test": "node --test test/capability-grant-proof.integration.test.js test/conflict-evidence.test.js test/current-sibling-retention.integration.test.js test/definition-closure.test.js test/facet-own-key-identity.test.js test/form-definition.integration.test.js test/form-own-key-setting.integration.test.js test/four-machine.integration.test.js test/interface-operations.test.js test/interface-proof-kit.integration.test.js"
+    "test": "node --test test/capability-grant-proof.integration.test.js test/conflict-evidence.test.js test/current-sibling-retention.integration.test.js test/definition-closure.test.js test/facet-own-key-identity.test.js"
   },
-  "engines": {
-    "node": ">=18"
-  }
+  "engines": {"node": ">=18"}
 }

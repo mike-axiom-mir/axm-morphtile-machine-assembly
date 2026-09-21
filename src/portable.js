@@ -43,17 +43,18 @@ function assertAssemblySemanticShape(value, path) {
   }
 
   if (
+    value != null &&
     (path === "request.dependencies" || /^request\.inputs\[\d+\]\.dependencies$/.test(path)) &&
     !Array.isArray(value)
   ) {
     shapeError("HOLD_DEPENDENCIES_SHAPE_INVALID", path, "Assembly dependency collections must be authored arrays; objects and strings are not reinterpreted as dependency sequences.");
   }
 
-  if (/^request\.inputs\[\d+\]\.warnings$/.test(path) && !Array.isArray(value)) {
+  if (value != null && /^request\.inputs\[\d+\]\.warnings$/.test(path) && !Array.isArray(value)) {
     shapeError("HOLD_WARNINGS_SHAPE_INVALID", path, "Upstream warning collections must be authored arrays.");
   }
 
-  if (/^request\.inputs\[\d+\]\.candidate\.form_hints$/.test(path) && !Array.isArray(value)) {
+  if (value != null && /^request\.inputs\[\d+\]\.candidate\.form_hints$/.test(path) && !Array.isArray(value)) {
     shapeError("HOLD_FORM_HINTS_SHAPE_INVALID", path, "candidate.form_hints must be an authored array of non-empty strings.");
   }
 
@@ -61,11 +62,12 @@ function assertAssemblySemanticShape(value, path) {
     shapeError("HOLD_FORM_HINTS_SHAPE_INVALID", path, "Every candidate.form_hints entry must be a non-empty string.");
   }
 
-  if (/^request\.inputs\[\d+\]\.candidate\.facets$/.test(path) && !isPlainRecord(value)) {
+  if (value != null && /^request\.inputs\[\d+\]\.candidate\.facets$/.test(path) && !isPlainRecord(value)) {
     shapeError("HOLD_FACETS_SHAPE_INVALID", path, "candidate.facets must be an authored plain map; array indices are not facet identities.");
   }
 
   if (
+    value != null &&
     (
       path === "request.world_requirements" ||
       /^request\.inputs\[\d+\]\.world_requirements$/.test(path) ||
@@ -76,7 +78,7 @@ function assertAssemblySemanticShape(value, path) {
     ) &&
     !isPlainRecord(value)
   ) {
-    shapeError("HOLD_WORLD_REQUIREMENTS_SHAPE_INVALID", path, "World requirements and their named word/definition collections must be authored plain maps.");
+    shapeError("HOLD_WORLD_REQUIREMENTS_SHAPE_INVALID", path, "World requirements and their named word/definition collections must be authored plain maps when present; null retains the established omitted-field meaning.");
   }
 }
 

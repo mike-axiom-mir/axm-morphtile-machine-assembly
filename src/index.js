@@ -283,7 +283,18 @@ function mergeCandidate(assembled, assembledPath, input, inputIndex, conflicts, 
   if (!inspectInputEnvelope(input, inputIndex, holds)) return false;
 
   const candidate = candidateOf(input) || {};
-  const schema = candidate.schema || null;
+  const schemaAuthored = hasOwn(candidate, "schema");
+  if (schemaAuthored && (typeof candidate.schema !== "string" || !candidate.schema)) {
+    holds.push({
+      code: "HOLD_CANDIDATE_SCHEMA_INVALID",
+      input: inputIndex,
+      schema: clone(candidate.schema),
+      detail: "An authored candidate schema must be a non-empty string; explicit invalid schema values are not schema omission."
+    });
+    heldCandidates.push({ input: inputIndex, schema: clone(candidate.schema), candidate: clone(candidate) });
+    return false;
+  }
+  const schema = schemaAuthored ? candidate.schema : null;
   if (schema && !SUPPORTED_SCHEMAS.has(schema)) {
     holds.push({
       code: "HOLD_UNASSEMBLABLE_CANDIDATE_SCHEMA",
@@ -294,7 +305,7 @@ function mergeCandidate(assembled, assembledPath, input, inputIndex, conflicts, 
     heldCandidates.push({ input: inputIndex, schema, candidate: clone(candidate) });
     return false;
   }
-  if (!schema) warnings.push({ code: "LEGACY_SCHEMALESS_FRAGMENT", input: inputIndex });
+  if (!schemaAuthored) warnings.push({ code: "LEGACY_SCHEMALESS_FRAGMENT", input: inputIndex });
 
   if (VIEW_OPERATION_SCHEMAS.has(schema)) {
     return foldViewOperation(assembled, assembledPath, candidate, inputIndex, conflicts, holds, owners);

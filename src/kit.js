@@ -362,6 +362,63 @@ function resolveKitDependencies(assemblyResult, runtime, stagedWorld) {
   return { receipts, unresolved, unsatisfied };
 }
 
+function inspectReceiverClosure(runtime, receiver, kit) {
+  const own = (container, key) => Boolean(container && typeof container === "object" && !Array.isArray(container) && Object.prototype.hasOwnProperty.call(container, key));
+  const missing = { tile: [], definitions: [], words: [] };
+  const changed = { tile: [], definitions: [], words: [] };
+  const observedDefinitions = {};
+  const observedWords = {};
+  const expectedTileHash = runtime.hashOf(kit.tile);
+  const resolvedTile = runtime.resolveTile(receiver, kit.tile.id);
+
+  if (!resolvedTile) {
+    missing.tile.push(kit.tile.id);
+  } else {
+    const observedTileHash = runtime.hashOf(resolvedTile);
+    if (observedTileHash !== expectedTileHash) {
+      changed.tile.push({ id: kit.tile.id, expected_sha256: expectedTileHash, observed_sha256: observedTileHash });
+    }
+  }
+
+  for (const id of Object.keys(kit.defs || {}).sort()) {
+    if (!own(receiver && receiver.defs, id)) {
+      missing.definitions.push(id);
+      continue;
+    }
+    observedDefinitions[id] = clone(receiver.defs[id]);
+    const expected = runtime.hashOf(kit.defs[id]);
+    const observed = runtime.hashOf(receiver.defs[id]);
+    if (observed !== expected) changed.definitions.push({ id, expected_sha256: expected, observed_sha256: observed });
+  }
+
+  for (const id of Object.keys(kit.words || {}).sort()) {
+    if (!own(receiver && receiver.words, id)) {
+      missing.words.push(id);
+      continue;
+    }
+    observedWords[id] = clone(receiver.words[id]);
+    const expected = runtime.hashOf(kit.words[id]);
+    const observed = runtime.hashOf(receiver.words[id]);
+    if (observed !== expected) changed.words.push({ id, expected_sha256: expected, observed_sha256: observed });
+  }
+
+  const incomplete = missing.tile.length || missing.definitions.length || missing.words.length || changed.tile.length || changed.definitions.length || changed.words.length;
+  const observedSha256 = incomplete
+    ? null
+    : runtime.hashOf({ tile: resolvedTile, defs: observedDefinitions, words: observedWords });
+  const expectedSha256 = kit.expect && kit.expect.sha256 ? kit.expect.sha256 : runtime.hashOf({ tile: kit.tile, defs: kit.defs, words: kit.words });
+  const hashMatches = observedSha256 !== null && observedSha256 === expectedSha256;
+
+  return {
+    status: !incomplete && hashMatches ? "SATISFIED" : "UNSATISFIED",
+    expected_sha256: expectedSha256,
+    observed_sha256: observedSha256,
+    missing,
+    changed,
+    hash_matches: hashMatches
+  };
+}
+
 function materializeKit(assemblyResult, runtime, options = {}) {
   if (!assemblyResult || typeof assemblyResult !== "object") {
     return hold("HOLD_ASSEMBLY_RESULT_NOT_CANDIDATE", "A MorphTile kit may only be materialized from a successful Assembly Machine candidate.");
@@ -533,6 +590,16 @@ function materializeKit(assemblyResult, runtime, options = {}) {
     }
   }
 
+  const receiverClosure = inspectReceiverClosure(runtime, receiver, kit);
+  if (receiverClosure.status !== "SATISFIED") {
+    return hold("HOLD_KIT_RUNTIME_RECEIVER_INCOMPLETE", "The supplied MorphTile runtime returned from every READY import operation but the isolated receiver does not contain the exact portable kit closure.", {
+      ...trace,
+      dependency_resolution: dependencyResolution.receipts,
+      runtime_contract: contract,
+      hold: { receiver_closure: receiverClosure }
+    });
+  }
+
   return {
     status: "CANDIDATE",
     kit,
@@ -544,7 +611,8 @@ function materializeKit(assemblyResult, runtime, options = {}) {
       { kind: "TILE", status: "PASS", check: "assembly candidate materialized and validateTile accepted it" },
       { kind: "KIT_HASH", status: "PASS", check: "kit expect.sha256 uses the supplied MorphTile runtime hashOf over tile + defs + words; Assembly provenance, warnings and discharged-proof receipts remain sidecars outside portable content identity" },
       { kind: "KIT_IMPORT", status: "PASS", check: "fresh-world importKit returned READY without overwrite or partial mode" },
-      { kind: "KIT_APPLY", status: "PASS", check: `all ${checked.ops.length} READY import operations executed in order against the isolated fresh receiver` }
+      { kind: "KIT_APPLY", status: "PASS", check: `all ${checked.ops.length} READY import operations executed in order against the isolated fresh receiver` },
+      { kind: "KIT_RECEIVER_CLOSURE", status: "PASS", check: `receiver carries the exact tile + declared definitions + declared words at ${receiverClosure.expected_sha256}` }
     ],
     holds: []
   };
@@ -557,5 +625,6 @@ module.exports = {
   resolveInterfaceTargetProof,
   resolvePresentationAnchorProof,
   resolveKitDependencies,
+  inspectReceiverClosure,
   materializeKit
 };

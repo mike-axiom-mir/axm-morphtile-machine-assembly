@@ -51,7 +51,7 @@ function parseInterfaceOperations(assembledId, assembledPath, candidate, input) 
   const byType = Object.create(null);
   for (const operation of candidate.operations) {
     if (!operation || typeof operation !== "object" || Array.isArray(operation)) return fail(input, "every interface operation must be an object");
-    if (typeof operation.op !== "string" || !operation.op) return fail(input, "interface operation op must be a non-empty string");
+    if (typeof operation.op !== "string" || !operation.op) return fail(input, "unsupported interface operation; operation op must be a non-empty string");
     const operationKeys = Object.prototype.hasOwnProperty.call(OPERATION_KEYS, operation.op) ? OPERATION_KEYS[operation.op] : null;
     if (!operationKeys) return fail(input, "unsupported interface operation; only view.set and presentation.set are proven", { operation: operation.op });
     if (Object.prototype.hasOwnProperty.call(byType, operation.op)) return fail(input, "duplicate interface operation", { operation: operation.op });

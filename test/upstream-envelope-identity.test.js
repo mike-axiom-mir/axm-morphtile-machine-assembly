@@ -86,6 +86,18 @@ test("status-bearing upstream envelopes fail closed on malformed machine identit
   }
 });
 
+test("status-only legacy envelopes remain accepted when no source identity fields are authored", () => {
+  const input = upstreamEnvelope();
+  delete input.request_id;
+  delete input.machine;
+
+  const out = assemble(input, "status-only-legacy");
+
+  assert.equal(out.status, "CANDIDATE", JSON.stringify(out.holds));
+  assert.equal(out.source_provenance[2].machine, null);
+  assert.equal(out.source_provenance[2].request_id, null);
+});
+
 test("valid upstream envelope identity remains accepted and exactly traceable", () => {
   const input = upstreamEnvelope();
   const out = assemble(input, "valid-control");

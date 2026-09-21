@@ -2,6 +2,8 @@
 
 ## Unreleased — 2026-09-21
 
+- Upstream `UPSTREAM_WARNING.machine` source identity now follows authored own-key presence rather than JavaScript truthiness, so portable falsey authored machine ids are preserved instead of being rewritten to `null`; absence still reports `null` and no machine-id validity/authority policy is inferred.
+- Integrated READY-plan coverage proves MorphTile's selected import plan still represents every declared kit word, definition and root tile before receiver application; integrated structured-container guards keep authored `params`, `view` and `presentation` shape from collapsing through truthiness or runtime normalization.
 - Generic Assembly candidate-object merging now decides identity from authored own keys rather than JavaScript prototype-chain membership.
 - New candidate keys are inserted as explicit own data properties, so `__proto__`, `constructor`, and `toString` cannot be confused with inherited host properties or trigger the legacy `__proto__` setter.
 - Equal authored values still deduplicate deterministically; true same-own-key disagreement still returns `HOLD_ASSEMBLY_CONFLICT` with both source lanes and both exact variants.

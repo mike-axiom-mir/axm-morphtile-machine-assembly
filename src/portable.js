@@ -55,6 +55,48 @@ function isCandidateArrayEntryPath(path, field) {
   return !!match && match[1] === field;
 }
 
+function ownDataDescriptor(value, name) {
+  const descriptor = Object.getOwnPropertyDescriptor(value, name);
+  return descriptor && Object.prototype.hasOwnProperty.call(descriptor, "value") ? descriptor : null;
+}
+
+function assertUpstreamEnvelopeIdentity(value, path) {
+  const statusDescriptor = ownDataDescriptor(value, "status");
+  if (!statusDescriptor || typeof statusDescriptor.value !== "string") return;
+
+  const requestIdDescriptor = ownDataDescriptor(value, "request_id");
+  if (!requestIdDescriptor || typeof requestIdDescriptor.value !== "string" || !requestIdDescriptor.value) {
+    shapeError(
+      "HOLD_INPUT_REQUEST_ID_INVALID",
+      path + ".request_id",
+      "A status-bearing upstream machine envelope must carry a non-empty string request_id; malformed authored identity is not source omission."
+    );
+  }
+
+  const machineDescriptor = ownDataDescriptor(value, "machine");
+  const machine = machineDescriptor && machineDescriptor.value;
+  if (!machine || typeof machine !== "object" || Array.isArray(machine) || isProxy(machine) || !isPlainRecord(machine)) {
+    shapeError(
+      "HOLD_INPUT_MACHINE_INVALID",
+      path + ".machine",
+      "A status-bearing upstream machine envelope must carry a plain machine identity map with non-empty string id and version fields."
+    );
+  }
+
+  const idDescriptor = ownDataDescriptor(machine, "id");
+  const versionDescriptor = ownDataDescriptor(machine, "version");
+  if (
+    !idDescriptor || typeof idDescriptor.value !== "string" || !idDescriptor.value ||
+    !versionDescriptor || typeof versionDescriptor.value !== "string" || !versionDescriptor.value
+  ) {
+    shapeError(
+      "HOLD_INPUT_MACHINE_INVALID",
+      path + ".machine",
+      "A status-bearing upstream machine envelope must carry a plain machine identity map with non-empty string id and version fields."
+    );
+  }
+}
+
 function assertExactOwnKeys(value, path, allowed, code, label) {
   if (Object.getOwnPropertySymbols(value).length) {
     shapeError(code, path, label + " does not define symbol-keyed authored fields.");
@@ -92,8 +134,15 @@ function assertAssemblySemanticShape(value, path) {
     shapeError("HOLD_INPUTS_SHAPE_INVALID", path, "Assembly request.inputs must be an authored array; Assembly will not inherit iterable/string container semantics.");
   }
 
-  if (/^request\.inputs\[\d+\]$/.test(path) && !isPlainRecord(value)) {
-    shapeError("HOLD_INPUT_SHAPE_INVALID", path, "Each Assembly input entry must be an authored plain object.");
+  if (/^request\.inputs\[\d+\]$/.test(path)) {
+    if (!isPlainRecord(value)) {
+      shapeError("HOLD_INPUT_SHAPE_INVALID", path, "Each Assembly input entry must be an authored plain object.");
+    }
+    // A status-bearing input claims the provisional machine-result envelope,
+    // not merely legacy candidate matter. Its source identity therefore has a
+    // validity contract in addition to source-trace presence semantics. Read
+    // descriptors only, so accessors cannot execute while establishing it.
+    assertUpstreamEnvelopeIdentity(value, path);
   }
 
   if (

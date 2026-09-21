@@ -362,60 +362,97 @@ function resolveKitDependencies(assemblyResult, runtime, stagedWorld) {
   return { receipts, unresolved, unsatisfied };
 }
 
-function inspectReceiverClosure(runtime, receiver, kit) {
+function inspectReceiverClosure(runtime, receiver, operations) {
   const own = (container, key) => Boolean(container && typeof container === "object" && !Array.isArray(container) && Object.prototype.hasOwnProperty.call(container, key));
   const missing = { tile: [], definitions: [], words: [] };
   const changed = { tile: [], definitions: [], words: [] };
-  const observedDefinitions = {};
-  const observedWords = {};
-  const expectedTileHash = runtime.hashOf(kit.tile);
-  const resolvedTile = runtime.resolveTile(receiver, kit.tile.id);
+  const unsupported_operations = [];
+  let verifiedOperations = 0;
 
-  if (!resolvedTile) {
-    missing.tile.push(kit.tile.id);
-  } else {
-    const observedTileHash = runtime.hashOf(resolvedTile);
-    if (observedTileHash !== expectedTileHash) {
-      changed.tile.push({ id: kit.tile.id, expected_sha256: expectedTileHash, observed_sha256: observedTileHash });
-    }
-  }
-
-  for (const id of Object.keys(kit.defs || {}).sort()) {
-    if (!own(receiver && receiver.defs, id)) {
-      missing.definitions.push(id);
+  for (let operationIndex = 0; operationIndex < operations.length; operationIndex += 1) {
+    const operation = operations[operationIndex];
+    if (!operation || typeof operation !== "object" || Array.isArray(operation)) {
+      unsupported_operations.push({ operation_index: operationIndex, op: null, reason: "operation must be an object" });
       continue;
     }
-    observedDefinitions[id] = clone(receiver.defs[id]);
-    const expected = runtime.hashOf(kit.defs[id]);
-    const observed = runtime.hashOf(receiver.defs[id]);
-    if (observed !== expected) changed.definitions.push({ id, expected_sha256: expected, observed_sha256: observed });
-  }
 
-  for (const id of Object.keys(kit.words || {}).sort()) {
-    if (!own(receiver && receiver.words, id)) {
-      missing.words.push(id);
+    if (operation.op === "word.define") {
+      const id = operation.name;
+      const expected = {
+        name: id,
+        args: clone(operation.args || []),
+        body: clone(operation.body),
+        note: operation.note || null
+      };
+      if (!own(receiver && receiver.words, id)) {
+        missing.words.push(id);
+        continue;
+      }
+      const expectedSha = runtime.hashOf(expected);
+      const observedSha = runtime.hashOf(receiver.words[id]);
+      if (expectedSha !== observedSha) {
+        changed.words.push({ id, operation_index: operationIndex, expected_sha256: expectedSha, observed_sha256: observedSha });
+        continue;
+      }
+      verifiedOperations += 1;
       continue;
     }
-    observedWords[id] = clone(receiver.words[id]);
-    const expected = runtime.hashOf(kit.words[id]);
-    const observed = runtime.hashOf(receiver.words[id]);
-    if (observed !== expected) changed.words.push({ id, expected_sha256: expected, observed_sha256: observed });
+
+    if (operation.op === "def.put") {
+      const id = operation.id;
+      const expected = {
+        id,
+        name: operation.name || id,
+        body: clone(operation.body),
+        created_by: operation.by || "human"
+      };
+      if (!own(receiver && receiver.defs, id)) {
+        missing.definitions.push(id);
+        continue;
+      }
+      const expectedSha = runtime.hashOf(expected);
+      const observedSha = runtime.hashOf(receiver.defs[id]);
+      if (expectedSha !== observedSha) {
+        changed.definitions.push({ id, operation_index: operationIndex, expected_sha256: expectedSha, observed_sha256: observedSha });
+        continue;
+      }
+      verifiedOperations += 1;
+      continue;
+    }
+
+    if (operation.op === "tile.add") {
+      if ((operation.in || "") !== "" || !operation.tile || typeof operation.tile.id !== "string" || !operation.tile.id) {
+        unsupported_operations.push({ operation_index: operationIndex, op: "tile.add", reason: "Assembly fresh-receiver kit proof only accepts a root tile.add with an inspectable tile id" });
+        continue;
+      }
+      const id = operation.tile.id;
+      const observedTile = runtime.resolveTile(receiver, id);
+      if (!observedTile) {
+        missing.tile.push(id);
+        continue;
+      }
+      const expectedSha = runtime.hashOf(operation.tile);
+      const observedSha = runtime.hashOf(observedTile);
+      if (expectedSha !== observedSha) {
+        changed.tile.push({ id, operation_index: operationIndex, expected_sha256: expectedSha, observed_sha256: observedSha });
+        continue;
+      }
+      verifiedOperations += 1;
+      continue;
+    }
+
+    unsupported_operations.push({ operation_index: operationIndex, op: operation.op || null, reason: "operation is outside the exact READY kit-import receiver proof contract" });
   }
 
-  const incomplete = missing.tile.length || missing.definitions.length || missing.words.length || changed.tile.length || changed.definitions.length || changed.words.length;
-  const observedSha256 = incomplete
-    ? null
-    : runtime.hashOf({ tile: resolvedTile, defs: observedDefinitions, words: observedWords });
-  const expectedSha256 = kit.expect && kit.expect.sha256 ? kit.expect.sha256 : runtime.hashOf({ tile: kit.tile, defs: kit.defs, words: kit.words });
-  const hashMatches = observedSha256 !== null && observedSha256 === expectedSha256;
-
+  const incomplete = missing.tile.length || missing.definitions.length || missing.words.length || changed.tile.length || changed.definitions.length || changed.words.length || unsupported_operations.length || verifiedOperations !== operations.length;
   return {
-    status: !incomplete && hashMatches ? "SATISFIED" : "UNSATISFIED",
-    expected_sha256: expectedSha256,
-    observed_sha256: observedSha256,
+    status: incomplete ? "UNSATISFIED" : "SATISFIED",
+    plan_sha256: runtime.hashOf(operations),
+    planned_operations: operations.length,
+    verified_operations: verifiedOperations,
     missing,
     changed,
-    hash_matches: hashMatches
+    unsupported_operations
   };
 }
 
@@ -590,9 +627,9 @@ function materializeKit(assemblyResult, runtime, options = {}) {
     }
   }
 
-  const receiverClosure = inspectReceiverClosure(runtime, receiver, kit);
+  const receiverClosure = inspectReceiverClosure(runtime, receiver, checked.ops);
   if (receiverClosure.status !== "SATISFIED") {
-    return hold("HOLD_KIT_RUNTIME_RECEIVER_INCOMPLETE", "The supplied MorphTile runtime returned from every READY import operation but the isolated receiver does not contain the exact portable kit closure.", {
+    return hold("HOLD_KIT_RUNTIME_RECEIVER_INCOMPLETE", "The supplied MorphTile runtime returned from every READY import operation but the isolated receiver does not contain the exact postconditions declared by that READY operation plan.", {
       ...trace,
       dependency_resolution: dependencyResolution.receipts,
       runtime_contract: contract,
@@ -612,7 +649,7 @@ function materializeKit(assemblyResult, runtime, options = {}) {
       { kind: "KIT_HASH", status: "PASS", check: "kit expect.sha256 uses the supplied MorphTile runtime hashOf over tile + defs + words; Assembly provenance, warnings and discharged-proof receipts remain sidecars outside portable content identity" },
       { kind: "KIT_IMPORT", status: "PASS", check: "fresh-world importKit returned READY without overwrite or partial mode" },
       { kind: "KIT_APPLY", status: "PASS", check: `all ${checked.ops.length} READY import operations executed in order against the isolated fresh receiver` },
-      { kind: "KIT_RECEIVER_CLOSURE", status: "PASS", check: `receiver carries the exact tile + declared definitions + declared words at ${receiverClosure.expected_sha256}` }
+      { kind: "KIT_RECEIVER_CLOSURE", status: "PASS", check: `all ${receiverClosure.verified_operations} READY operation postconditions are present exactly in the isolated fresh receiver; plan ${receiverClosure.plan_sha256}` }
     ],
     holds: []
   };

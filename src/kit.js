@@ -390,7 +390,7 @@ function materializeKit(assemblyResult, runtime, options = {}) {
     return hold("HOLD_ASSEMBLY_RESULT_NOT_CANDIDATE", "A MorphTile kit may only be materialized from a successful Assembly Machine candidate.", trace);
   }
 
-  const required = ["createTile", "validateTile", "createWorld", "exportKit", "importKit", "hashOf", "resolveTile"];
+  const required = ["createTile", "validateTile", "createWorld", "exportKit", "importKit", "applyStructOp", "hashOf", "resolveTile"];
   const missingRuntime = required.filter((name) => !runtime || typeof runtime[name] !== "function");
   if (missingRuntime.length) {
     return hold("HOLD_MORPHTILE_RUNTIME_CONTRACT_MISSING", "The supplied runtime does not expose the public kit contract required by Assembly.", {
@@ -506,6 +506,32 @@ function materializeKit(assemblyResult, runtime, options = {}) {
       }
     });
   }
+  if (!Array.isArray(checked.ops)) {
+    return hold("HOLD_KIT_RUNTIME_IMPORT_OPS_INVALID", "The supplied MorphTile runtime reported READY without an inspectable ordered operation list, so receiver application cannot be proven.", {
+      ...trace,
+      dependency_resolution: dependencyResolution.receipts,
+      runtime_contract: contract,
+      hold: { runtime_status: checked.status }
+    });
+  }
+
+  for (let operationIndex = 0; operationIndex < checked.ops.length; operationIndex += 1) {
+    const operation = clone(checked.ops[operationIndex]);
+    try {
+      runtime.applyStructOp(receiver, operation);
+    } catch (error) {
+      return hold("HOLD_KIT_RUNTIME_APPLY_FAILED", "The supplied MorphTile runtime planned a READY kit import but rejected one of its own import operations during isolated receiver application.", {
+        ...trace,
+        dependency_resolution: dependencyResolution.receipts,
+        runtime_contract: contract,
+        hold: {
+          operation_index: operationIndex,
+          operation,
+          error: String(error && error.message ? error.message : error)
+        }
+      });
+    }
+  }
 
   return {
     status: "CANDIDATE",
@@ -517,7 +543,8 @@ function materializeKit(assemblyResult, runtime, options = {}) {
       { kind: "DEPENDENCY_CLOSURE", status: "PASS", check: "every dependency was either deterministically discharged against isolated staged MorphTile matter, including exact declared capability grants resolved by the runtime contract, or materialization would have HELD" },
       { kind: "TILE", status: "PASS", check: "assembly candidate materialized and validateTile accepted it" },
       { kind: "KIT_HASH", status: "PASS", check: "kit expect.sha256 uses the supplied MorphTile runtime hashOf over tile + defs + words; Assembly provenance, warnings and discharged-proof receipts remain sidecars outside portable content identity" },
-      { kind: "KIT_IMPORT", status: "PASS", check: "fresh-world importKit returned READY without overwrite or partial mode" }
+      { kind: "KIT_IMPORT", status: "PASS", check: "fresh-world importKit returned READY without overwrite or partial mode" },
+      { kind: "KIT_APPLY", status: "PASS", check: `all ${checked.ops.length} READY import operations executed in order against the isolated fresh receiver` }
     ],
     holds: []
   };

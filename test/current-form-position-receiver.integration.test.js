@@ -3,6 +3,7 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const path = require("node:path");
+const fleet = require("../fixtures/current-fleet.json");
 const { run: assemble } = require("../src");
 const { materializeKit } = require("../src/kit");
 
@@ -12,8 +13,8 @@ const formCommit = process.env.CURRENT_FORM_COMMIT;
 const coreCommit = process.env.CURRENT_MORPHTILE_COMMIT;
 const ready = Boolean(formPath && corePath);
 
-const EXPECTED_FORM = "416326bcafec510dc16cd3712677461d45ca8b6c";
-const EXPECTED_CORE = "2bdf8eade1376055473b9cc1b11734b72a5566e5";
+const EXPECTED_FORM = fleet.form;
+const EXPECTED_CORE = fleet.core;
 
 function req(id, goal, intent) {
   return {

@@ -1,8 +1,8 @@
 # Status
 
-- State: UPSTREAM WARNING SOURCE-IDENTITY CANDIDATE — CURRENT-BASE REPROOF REQUIRED
+- State: CURRENT-FLEET REFRESH + DRIFT-GUARD CANDIDATE — VERIFICATION REQUIRED
 - Test command: `npm test`
-- Assembly integrated main/base: `778bd4f46d9675bbbc991ba98a0bddf85a92c6b3`
+- Assembly integrated main/base: `3d0ee8511e1440d09511f0c777f67c2b63f02d7b`
 - MorphTile integrated receiver: `2bdf8eade1376055473b9cc1b11734b72a5566e5`
 - Envelope: provisional v0.1
 - Visual proof: none
@@ -11,45 +11,52 @@
 
 Assembly combines compatible tile, facet, capability and reviewed Interface candidates while preserving dependency closure, named words/definitions, source provenance, upstream warnings/HOLD evidence and canonical closure identity. Same-identity conflicts HOLD with both variants and sources. Structured candidate matter is preflighted before host truthiness/iteration can reinterpret authored values.
 
-Complete-kit proof is layered and already integrated: portable kit identity, READY-plan coverage, ordered receiver application, and receiver postcondition closure are separate evidence steps. Historical receiver receipts remain attached to their exact producer/runtime identities.
+Complete-kit proof remains layered: portable kit identity, READY-plan coverage, ordered receiver application and receiver postcondition closure are separate evidence steps. Historical receiver receipts remain attached to the exact producer/runtime identities they actually exercised.
 
-Integrated main `778bd4f46d9675bbbc991ba98a0bddf85a92c6b3` includes independently accepted Assembly work through #45. Its dedicated current-fleet lane pins Form `b2c2202e746baf4d9dc23ec5e328ac9c63f2b695`, Surface `4e4495182aa83e5dfba37722fc3756a70cfaafaa`, Capability `edc07af182ee26ca1ceb64b5d5205591ec6aca9d`, Interface `ec92507b82d855de49ba024ecfdd32aada24b186`, and MorphTile core `2bdf8eade1376055473b9cc1b11734b72a5566e5`.
+Integrated main `3d0ee8511e1440d09511f0c777f67c2b63f02d7b` includes independently accepted Assembly #46 current-fleet receiver evidence and Assembly #43 exact upstream-warning source identity. The integrated moving-fleet manifest is now historical for the producer identities it named; it is not silently relabelled after sibling integration.
 
-Form has since advanced on its own verified/integrated lane to `416326bcafec510dc16cd3712677461d45ca8b6c` with repeat-position generated-state convergence. That movement is not silently relabelled as covered by the older current-fleet receipt; Assembly must re-earn receiver evidence separately.
+## Current candidate: exact-fleet refresh plus non-authoritative drift evidence
 
-## Current candidate: preserve exact upstream warning source identity
+Assembly PR #47 refreshes the executable current-fleet receipt to the currently integrated identities:
 
-`source_provenance` already preserves the upstream machine object exactly, but integrated `preserveInputWarnings` derives compact `UPSTREAM_WARNING.machine` through JavaScript truthiness. Authored portable `machine.id` values such as `""`, `0`, or `false` therefore become `null`, contradicting the exact authored value retained by full provenance.
+- Form `8b4a18d9d35aad91575b02831a8448104993f4f9`
+- Surface `4e4495182aa83e5dfba37722fc3756a70cfaafaa`
+- Capability `edc07af182ee26ca1ceb64b5d5205591ec6aca9d`
+- Interface `9ea9dd6ca09813885aaaa7fc12c4e06f08fe42e9`
+- MorphTile core `2bdf8eade1376055473b9cc1b11734b72a5566e5`
 
-This candidate changes only that Assembly-owned evidence wrapper:
+The same candidate converts repeated manual fleet-drift reasoning into bounded deterministic evidence machinery:
 
-- select source identity by own-key presence rather than truthiness;
-- clone the exact portable authored `machine.id` value into the compact warning record;
-- preserve authored `null` as the exact scalar value while full `source_provenance` retains the own-key needed to distinguish authored-null from true absence;
-- reject an own-key `undefined` id at the existing portable boundary rather than collapsing it into omission;
-- preserve warning body and caller-owned input exactly;
-- do not infer machine-id validity, producer authority, dependency priority, CANON or merge preference from the preserved value.
+- the pinned manifest rejects unsupported authored fields instead of silently ignoring future identity lanes;
+- an explicitly supplied observed-fleet snapshot has its own schema and must name the same exact five lanes with exact lowercase 40-character SHAs;
+- matching observed and pinned identities produce PASS;
+- producer/runtime movement produces `HOLD_CURRENT_FLEET_DRIFT` with both pinned and observed exact identities;
+- malformed or incomplete observations produce `HOLD_CURRENT_FLEET_OBSERVATION_INVALID` before any comparison;
+- drift assessment never edits, advances or canonizes the pinned manifest.
 
-Historical fail-first head `0374b6da4fbd7ebf6ba4cc8762f8f7ae72cf754b` remains regression evidence for the falsey rewrite. Earlier repaired heads were green on older Assembly bases, but exact-head evidence does not transfer across base convergence. This branch is therefore being converged again onto current integrated Assembly main `778bd4f46d9675bbbc991ba98a0bddf85a92c6b3` and must earn fresh producer CI plus independent Verification on the new exact head.
+This is deliberately not remote discovery. Repository inspection still establishes which upstream identities are actually integrated and worth comparing. The machine only turns the repeated comparison and HOLD decision into deterministic capability.
 
 ## Reusable rules
 
-**Diagnostic provenance is still provenance.** Convenience metadata must not use host-language truthiness to contradict authored matter preserved by full provenance.
+**Historical green evidence belongs to the exact identities and semantic paths it exercised.** A newer producer identity requires a fresh receiver receipt; an exact SHA alone does not prove newly changed semantics.
 
-**Presence, portability and validity are separate questions.** Own-key presence determines whether a field was authored; the portable boundary determines whether its value can survive transport; neither grants semantic authority.
+**A current-fleet receipt has one explicit identity authority.** Workflow checkouts, emitted commit evidence and receiver tests derive from the manifest rather than maintaining independent SHA tables.
 
-**Compact evidence may be lossy only where the full evidence layer explicitly carries the missing distinction.** Authored `null` and absence may share the compact scalar `null`, but full source provenance must preserve the own-key distinction and the two layers must not disagree about an authored value.
+**Observation is evidence, not authority.** Detecting that an integrated sibling/core identity differs from the pinned receipt may justify a new Assembly candidate, but the comparison itself must not advance pins or silently canonize the observed revision.
 
-**Exact evidence follows exact code identity.** Rebased or converged candidates require fresh CI/Verification even when the logical feature is unchanged.
+**Exact evidence grammars fail closed.** Unknown authored manifest/observation fields are not harmless metadata because silently ignoring them can create a false claim of complete fleet identity coverage.
 
 ## Placement
 
-Assembly Machine owns this rule because Assembly creates the sourced warning wrapper. MorphTile core does not participate in that metadata path; no universal representation/runtime primitive is missing.
+This belongs in Assembly Machine because Assembly owns current-fleet receiver evidence and decides whether a complete assembled receipt is fresh for the identities it claims. MorphTile core already provides the representation/import/application/compile substrate; no missing universal representation/runtime primitive was exposed.
+
+Form #51 remains a separate unverified Form-owned generated-grid-rotation candidate and is not included in Assembly's current integrated receipt until its own authority gate is satisfied and integration actually occurs.
 
 ## HELD / open
 
-- Independent Verification must attack the final exact candidate head after fresh producer CI, including `""`, `0`, `false`, authored `null`, non-portable own-key `undefined`, true absence, warning-body preservation, full-provenance distinction and caller immutability.
-- Current Form `416326bcafec510dc16cd3712677461d45ca8b6c` needs a separate current-fleet receiver receipt before Assembly can claim it is covered.
-- MorphTile core #17 remains core-owned; Assembly does not duplicate it.
+- Fresh independent Verification must attack the final exact Assembly #47 head before Creation Director integration. Producer CI is not acceptance authority.
+- MorphTile core #17 remains core-owned; Assembly does not duplicate its lexical-repeat presentation repair.
 - Presentation z-order remains HOLD without an evidenced canonical core primitive/schema.
 - No automatic conflict/dependency winner, invented missing definitions/context, visual-quality proof, automatic CANON, self-merge or merge authority.
+
+`PAUSE_RECOMMENDED: NO` — current-fleet evidence is active and this activation exposed a repeated drift-comparison judgment that could be made deterministic without widening authority.

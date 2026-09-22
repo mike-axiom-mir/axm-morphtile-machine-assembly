@@ -30,6 +30,18 @@ test("current-fleet manifest fails closed on authored fields outside its exact i
   ]);
 });
 
+test("current-fleet manifest rejects identity inherited only through the prototype", () => {
+  const inherited = Object.create(fleet);
+  assert.deepEqual(validateFleet(inherited), [
+    "manifest: schema must equal axm.morphtile.assembly-current-fleet/v1",
+    "form: expected an exact lowercase 40-character commit sha",
+    "surface: expected an exact lowercase 40-character commit sha",
+    "capability: expected an exact lowercase 40-character commit sha",
+    "interface: expected an exact lowercase 40-character commit sha",
+    "core: expected an exact lowercase 40-character commit sha"
+  ]);
+});
+
 test("explicit observed fleet snapshot validates the same exact lane set without gaining authority", () => {
   assert.deepEqual(validateObservedFleet(observation()), []);
 
@@ -42,6 +54,18 @@ test("explicit observed fleet snapshot validates the same exact lane set without
   const extra = observation({ verification: "1".repeat(40) });
   assert.deepEqual(validateObservedFleet(extra), [
     "observation: unsupported authored field(s): verification"
+  ]);
+});
+
+test("observed fleet identity must also be authored as own evidence", () => {
+  const inherited = Object.create(observation());
+  assert.deepEqual(validateObservedFleet(inherited), [
+    "observation: schema must equal axm.morphtile.assembly-current-fleet-observation/v1",
+    "form: expected an exact lowercase 40-character observed commit sha",
+    "surface: expected an exact lowercase 40-character observed commit sha",
+    "capability: expected an exact lowercase 40-character observed commit sha",
+    "interface: expected an exact lowercase 40-character observed commit sha",
+    "core: expected an exact lowercase 40-character observed commit sha"
   ]);
 });
 

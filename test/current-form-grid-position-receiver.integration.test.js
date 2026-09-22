@@ -47,7 +47,7 @@ function applyImported(MT, receiver, imported) {
   for (const operation of imported.ops || []) MT.applyStructOp(receiver, operation);
 }
 
-test("current integrated Form grid position state survives complete Assembly receiver closure", { skip: !ready }, () => {
+test("current integrated Form downstream grid-position state survives complete Assembly receiver closure", { skip: !ready }, () => {
   assert.equal(formCommit, EXPECTED_FORM,
     "current grid-position proof must bind the exact integrated Form identity that owns downstream grid-position state");
   assert.equal(coreCommit, EXPECTED_CORE,
@@ -59,11 +59,15 @@ test("current integrated Form grid position state survives complete Assembly rec
 
   const form = Form.run(req(
     "current-form-grid-position",
-    "Create current integrated bounded grid position progression",
+    "Create current integrated grid position state through primitive-size progression",
     {
       grid: {
         counts: [3, 1, 2],
         step: [2, 9, -1],
+        size_step: {
+          x: [0.25, 0, 0],
+          z: [0, 0, 0.1]
+        },
         part: { shape: "box", pos: [10, -2, 3], size: [1, 1, 0.5] }
       }
     }
@@ -76,12 +80,17 @@ test("current integrated Form grid position state survives complete Assembly rec
     ["+", 10, ["*", ["var", "gx"], 2]],
     -2,
     ["+", 3, ["*", ["var", "gz"], -1]]
-  ], "current Form must expose integrated grid-position state with canonical active-axis lexical expressions only");
+  ], "current Form downstream grid-position state must emit canonical active-axis lexical expressions only");
+  assert.deepEqual(authoredLeaf.size, [
+    ["+", 1, ["*", ["var", "gx"], 0.25]],
+    1,
+    ["+", 0.5, ["*", ["var", "gz"], 0.1]]
+  ], "the proof must actually traverse Form's grid-size progression lane that consumes shared grid-position state");
 
   const assembled = assemble({
     envelope_version: "0.1",
     request_id: "assembly-current-form-grid-position",
-    goal: "Prove current integrated Form grid position state through complete Assembly transport",
+    goal: "Prove current integrated Form downstream grid position state through complete Assembly transport",
     intent: { id, name: "Current grid position" },
     inputs: [form],
     provenance: { caller: "assembly-current-form-grid-position-proof" }
@@ -122,5 +131,5 @@ test("current integrated Form grid position state survives complete Assembly rec
   assert.equal(mesh.recipe_parts, 6,
     "current 3x1x2 grid must compile to six concrete primitive instances");
   assert.equal(mesh.P.every(Number.isFinite), true,
-    "receiver execution of the transported grid-position state must remain finite");
+    "receiver execution of the transported grid-position and size state must remain finite");
 });

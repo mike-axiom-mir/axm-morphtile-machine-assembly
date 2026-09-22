@@ -5,15 +5,10 @@ const SCHEMA = "axm.morphtile.assembly-current-fleet/v1";
 const OBSERVATION_SCHEMA = "axm.morphtile.assembly-current-fleet-observation/v1";
 const EXACT_SHA = /^[0-9a-f]{40}$/;
 const MANIFEST_FIELDS = new Set(["schema", ...LANES]);
-const REQUIRED_FIELDS = Object.freeze(["schema", ...LANES]);
 const hasOwn = (value, key) => Object.prototype.hasOwnProperty.call(value, key);
 
 function unsupportedFields(value) {
   return Object.keys(value).filter((key) => !MANIFEST_FIELDS.has(key)).sort();
-}
-
-function missingOwnFields(value) {
-  return REQUIRED_FIELDS.filter((key) => !hasOwn(value, key));
 }
 
 function validateFleet(fleet) {
@@ -23,12 +18,8 @@ function validateFleet(fleet) {
 
   const errors = [];
   const unexpected = unsupportedFields(fleet);
-  const missingOwn = missingOwnFields(fleet);
   if (unexpected.length) {
     errors.push(`manifest: unsupported authored field(s): ${unexpected.join(", ")}`);
-  }
-  if (missingOwn.length) {
-    errors.push(`manifest: required authored field(s) must be own properties: ${missingOwn.join(", ")}`);
   }
   if (!hasOwn(fleet, "schema") || fleet.schema !== SCHEMA) {
     errors.push(`manifest: schema must equal ${SCHEMA}`);
@@ -51,12 +42,8 @@ function validateObservedFleet(observed) {
 
   const errors = [];
   const unexpected = unsupportedFields(observed);
-  const missingOwn = missingOwnFields(observed);
   if (unexpected.length) {
     errors.push(`observation: unsupported authored field(s): ${unexpected.join(", ")}`);
-  }
-  if (missingOwn.length) {
-    errors.push(`observation: required authored field(s) must be own properties: ${missingOwn.join(", ")}`);
   }
   if (!hasOwn(observed, "schema") || observed.schema !== OBSERVATION_SCHEMA) {
     errors.push(`observation: schema must equal ${OBSERVATION_SCHEMA}`);

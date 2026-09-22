@@ -1,7 +1,5 @@
 "use strict";
 
-const { types: { isProxy } } = require("node:util");
-
 const LANES = Object.freeze(["form", "surface", "capability", "interface", "core"]);
 const SCHEMA = "axm.morphtile.assembly-current-fleet/v1";
 const OBSERVATION_SCHEMA = "axm.morphtile.assembly-current-fleet-observation/v1";
@@ -28,13 +26,6 @@ function inspectFleetRecord(value, {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
     return {
       errors: [`${label}: expected a plain object-like record`],
-      snapshot: null
-    };
-  }
-
-  if (isProxy(value)) {
-    return {
-      errors: [`${label}: proxy-backed evidence is executable and is not accepted`],
       snapshot: null
     };
   }

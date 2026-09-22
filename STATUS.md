@@ -50,7 +50,7 @@ Specification head `096bde95a943affd6311711764110fc4571285d8` deliberately faile
 
 Predecessor #48 head `64e04f13fd98ff1a91b573b6ed17802fa35750d6` was producer-green but independently rejected by Verification round 48: Verification PR #79 exact verifier head `94ab092d8acedd169f7ee273a7138a19c164472e`, run/job `35691133425` / `106628168815 = FAILURE`. The independent attack showed ordinary post-validation property lookup could consume values different from the validated own data descriptors.
 
-That rejection is preserved as exact-head failure evidence. The repaired head must earn fresh producer CI and fresh independent Verification; neither predecessor producer green nor predecessor verifier failure is relabelled as evidence for the repaired identity.
+That rejection is preserved as exact-head failure evidence. Exact producer CI for the moving candidate head is intentionally recorded on PR #48 / the MorphTile handoff rather than embedded here, because adding a CI receipt to this file would itself create a different commit identity. Every final candidate head still requires fresh producer CI and fresh independent Verification before integration.
 
 ## Reusable rules
 
@@ -70,7 +70,7 @@ This belongs in Assembly Machine because Assembly owns current-fleet receiver/ev
 
 ## HELD / open
 
-- Fresh producer CI and fresh independent Verification must attack the repaired exact Assembly #48 head before Creation Director integration. Producer CI is not acceptance authority.
+- The exact final Assembly #48 head must have fresh producer CI and fresh independent Verification before Creation Director integration. Producer CI is not acceptance authority; exact-head producer receipts live on the PR/handoff so this status file does not invalidate them by recording itself.
 - Form #52 and Interface #43 have independent exact-head Verification PASS but remain separate draft/unmerged producer-owned candidates until Creation Director integration; Assembly does not pre-adopt them into the integrated fleet.
 - Surface remains integrated at `4e4495182aa83e5dfba37722fc3756a70cfaafaa`; Capability remains integrated at `edc07af182ee26ca1ceb64b5d5205591ec6aca9d`.
 - MorphTile core #17 remains core-owned; Assembly does not duplicate its lexical-repeat presentation repair.

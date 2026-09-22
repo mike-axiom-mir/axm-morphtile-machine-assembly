@@ -7,7 +7,9 @@ const path = require("node:path");
 const fleet = require("../fixtures/current-fleet.json");
 
 const workflowPath = path.resolve(__dirname, "../.github/workflows/current-fleet.yml");
+const receiverProofPath = path.resolve(__dirname, "./round37-current-fleet.integration.test.js");
 const workflow = fs.readFileSync(workflowPath, "utf8");
+const receiverProof = fs.readFileSync(receiverProofPath, "utf8");
 
 const lanes = {
   form: {
@@ -36,7 +38,7 @@ function escapeRegex(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-function validate(text, expectedFleet) {
+function validateWorkflow(text, expectedFleet) {
   const errors = [];
   for (const [lane, contract] of Object.entries(lanes)) {
     const commit = expectedFleet[lane];
@@ -60,15 +62,32 @@ function validate(text, expectedFleet) {
   return errors;
 }
 
-test("current-fleet workflow checkout refs and evidence env identities match one canonical manifest", () => {
+function validateReceiverProof(text, expectedFleet) {
+  const errors = [];
+  for (const lane of Object.keys(lanes)) {
+    const commit = expectedFleet[lane];
+    const expectedEntry = new RegExp(`${lane}:\\s*"${commit}"`);
+    if (!expectedEntry.test(text)) {
+      errors.push(`${lane}: receiver proof identity does not match manifest ${commit}`);
+    }
+  }
+  return errors;
+}
+
+test("current-fleet workflow and receiver proof identities match one canonical manifest", () => {
   assert.equal(fleet.schema, "axm.morphtile.assembly-current-fleet/v1");
-  assert.deepEqual(validate(workflow, fleet), []);
+  assert.deepEqual(validateWorkflow(workflow, fleet), []);
+  assert.deepEqual(validateReceiverProof(receiverProof, fleet), []);
 });
 
-test("current-fleet pin validator fails closed when a workflow drifts from the manifest", () => {
+test("current-fleet pin validator fails closed when workflow or receiver evidence drifts from the manifest", () => {
   const staleForm = "0000000000000000000000000000000000000000";
-  const drifted = workflow.replaceAll(fleet.form, staleForm);
-  const errors = validate(drifted, fleet);
-  assert.equal(errors.some((entry) => entry.startsWith("form: checkout ref")), true);
-  assert.equal(errors.some((entry) => entry.startsWith("form: CURRENT_FORM_COMMIT")), true);
+  const driftedWorkflow = workflow.replaceAll(fleet.form, staleForm);
+  const workflowErrors = validateWorkflow(driftedWorkflow, fleet);
+  assert.equal(workflowErrors.some((entry) => entry.startsWith("form: checkout ref")), true);
+  assert.equal(workflowErrors.some((entry) => entry.startsWith("form: CURRENT_FORM_COMMIT")), true);
+
+  const driftedReceiver = receiverProof.replace(fleet.form, staleForm);
+  const receiverErrors = validateReceiverProof(driftedReceiver, fleet);
+  assert.equal(receiverErrors.some((entry) => entry.startsWith("form: receiver proof identity")), true);
 });

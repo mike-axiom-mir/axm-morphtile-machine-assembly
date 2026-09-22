@@ -1,71 +1,55 @@
 # Status
 
-- State: READY IMPORT-PLAN COVERAGE CANDIDATE — EXACT-HEAD CI + INDEPENDENT VERIFICATION GATE
+- State: UPSTREAM WARNING SOURCE-IDENTITY CANDIDATE — CURRENT-BASE REPROOF REQUIRED
 - Test command: `npm test`
-- Assembly integrated main/base: `8a2a7bf6adf40266438945ad1482001be9d68900`
+- Assembly integrated main/base: `778bd4f46d9675bbbc991ba98a0bddf85a92c6b3`
 - MorphTile integrated receiver: `2bdf8eade1376055473b9cc1b11734b72a5566e5`
 - Envelope: provisional v0.1
 - Visual proof: none
 
-## Current Assembly capability
+## Integrated Assembly capability
 
-Assembly deterministically combines compatible tile, facet, capability and reviewed Interface transport candidates. It preserves dependency closure, words, definitions, upstream warnings/HOLD evidence, source provenance and a canonical SHA-256 closure hash. Same-identity conflicts HOLD with both variants and their sources instead of selecting a winner. Unsupported candidate schemas or malformed compatibility wrappers HOLD rather than disappearing through fallback behavior.
+Assembly combines compatible tile, facet, capability and reviewed Interface candidates while preserving dependency closure, named words/definitions, source provenance, upstream warnings/HOLD evidence and canonical closure identity. Same-identity conflicts HOLD with both variants and sources. Structured candidate matter is preflighted before host truthiness/iteration can reinterpret authored values.
 
-Definition references in proven MorphTile recipe/capability forms are discovered and missing definitions HOLD. World-requirement word/definition identity is checked so an explicit embedded `name`/`id` cannot contradict the map key without a HOLD. Exact Interface target/anchor proof obligations may be discharged only against isolated staged MorphTile matter that actually satisfies them. Missing parent/world context remains a kit-time HOLD.
+Complete-kit proof is layered and already integrated: portable kit identity, READY-plan coverage, ordered receiver application, and receiver postcondition closure are separate evidence steps. Historical receiver receipts remain attached to their exact producer/runtime identities.
 
-Integrated Assembly main already treats `importKit: READY` as a plan rather than completion: it executes every inspectable READY operation in an isolated fresh receiver and verifies each supported operation's installed postcondition. That receiver-closure work is now integrated at base `8a2a7bf6adf40266438945ad1482001be9d68900`.
+Integrated main `778bd4f46d9675bbbc991ba98a0bddf85a92c6b3` includes independently accepted Assembly work through #45. Its dedicated current-fleet lane pins Form `b2c2202e746baf4d9dc23ec5e328ac9c63f2b695`, Surface `4e4495182aa83e5dfba37722fc3756a70cfaafaa`, Capability `edc07af182ee26ca1ceb64b5d5205591ec6aca9d`, Interface `ec92507b82d855de49ba024ecfdd32aada24b186`, and MorphTile core `2bdf8eade1376055473b9cc1b11734b72a5566e5`.
 
-## Current candidate: READY plan coverage against declared kit matter
+Form has since advanced on its own verified/integrated lane to `416326bcafec510dc16cd3712677461d45ca8b6c` with repeat-position generated-state convergence. That movement is not silently relabelled as covered by the older current-fleet receipt; Assembly must re-earn receiver evidence separately.
 
-A deeper proof gap remained between portable-kit identity and receiver execution. Integrated Assembly verified whatever operations the runtime returned, but it did not first prove that the READY plan still represented everything the kit declared. A supplied runtime could omit a declared word or even the root tile from `checked.ops`; Assembly would then apply and verify only the surviving operations and could still call the kit complete. Likewise, a planner could substitute declared word semantics and the later receiver-closure proof would faithfully prove the substituted operation rather than the original kit declaration.
+## Current candidate: preserve exact upstream warning source identity
 
-This candidate converts that repeated reasoning into deterministic machinery:
+`source_provenance` already preserves the upstream machine object exactly, but integrated `preserveInputWarnings` derives compact `UPSTREAM_WARNING.machine` through JavaScript truthiness. Authored portable `machine.id` values such as `""`, `0`, or `false` therefore become `null`, contradicting the exact authored value retained by full provenance.
 
-- Assembly snapshots the fresh receiver before `importKit` planning so pre-existing compatible word/definition matter can be distinguished from planner omission;
-- after `READY` and before application, `inspectImportPlanCoverage` compares the ordered plan with the generated kit;
-- every declared word, definition and root tile must be covered by the READY plan, except a compatible word/definition already present before planning;
-- planned word/definition semantics must still match the declared kit semantics;
-- root-tile content is compared after removing only the receiver-owned provenance hash field that MorphTile legitimately normalizes during planning;
-- omitted, substituted, unexpected or duplicate named kit matter fails closed as `HOLD_KIT_RUNTIME_IMPORT_PLAN_INCOMPLETE` with deterministic `plan_coverage` evidence;
-- successful materialization gains `KIT_IMPORT_PLAN_COVERAGE` PASS evidence before `KIT_APPLY` and `KIT_RECEIVER_CLOSURE`.
+This candidate changes only that Assembly-owned evidence wrapper:
 
-This keeps three evidence layers separate: the portable kit hash proves what Assembly handed to `importKit`; plan coverage proves what the runtime elected to execute still corresponds to that kit; receiver closure proves the accepted plan's postconditions are actually installed.
+- select source identity by own-key presence rather than truthiness;
+- clone the exact portable authored `machine.id` value into the compact warning record;
+- preserve authored `null` as the exact scalar value while full `source_provenance` retains the own-key needed to distinguish authored-null from true absence;
+- reject an own-key `undefined` id at the existing portable boundary rather than collapsing it into omission;
+- preserve warning body and caller-owned input exactly;
+- do not infer machine-id validity, producer authority, dependency priority, CANON or merge preference from the preserved value.
 
-## Evidence
+Historical fail-first head `0374b6da4fbd7ebf6ba4cc8762f8f7ae72cf754b` remains regression evidence for the falsey rewrite. Earlier repaired heads were green on older Assembly bases, but exact-head evidence does not transfer across base convergence. This branch is therefore being converged again onto current integrated Assembly main `778bd4f46d9675bbbc991ba98a0bddf85a92c6b3` and must earn fresh producer CI plus independent Verification on the new exact head.
 
-Regression-first head `d33e769489547aa55042b78db02fbdfd559a23f0` intentionally failed push Actions run `35632082686`: a READY planner that removed the declared `word.define` operation was still promoted by integrated Assembly behavior.
+## Reusable rules
 
-Implementation head `4d56a61412d55305f57bae1e06c612a1ac8d9834` added deterministic import-plan coverage. Follow-up head `a0f1495c022121bf57bd1b02003ba52b4f02935b` added focused coverage for semantic word substitution and root-tile omission in addition to the original omitted-word regression.
+**Diagnostic provenance is still provenance.** Convenience metadata must not use host-language truthiness to contradict authored matter preserved by full provenance.
 
-Documentation follows those implementation/test commits. Final exact-head push + PR-triggered CI must still be green before handoff can claim the candidate verified.
+**Presence, portability and validity are separate questions.** Own-key presence determines whether a field was authored; the portable boundary determines whether its value can survive transport; neither grants semantic authority.
 
-## Reusable rules learned
+**Compact evidence may be lossy only where the full evidence layer explicitly carries the missing distinction.** Authored `null` and absence may share the compact scalar `null`, but full source provenance must preserve the own-key distinction and the two layers must not disagree about an authored value.
 
-**A READY plan is authority, not source truth.** Before Assembly executes a runtime-selected plan, it must prove that the plan still covers the portable kit whose hash was accepted.
+**Exact evidence follows exact code identity.** Rebased or converged candidates require fresh CI/Verification even when the logical feature is unchanged.
 
-**Plan-relative receiver closure cannot detect omitted source matter by itself.** A perfect proof that every returned operation installed correctly says nothing about declared kit matter the planner never returned.
+## Placement
 
-**Portable identity, plan authority and installed receiver identity are separate evidence layers.** Each transition requires its own proof and none may silently stand in for the next.
-
-**Legitimate normalization must be bounded.** MorphTile may normalize receiver-owned provenance hashing during import planning, but that does not authorize semantic substitution of the declared tile/word/definition matter.
-
-**Historical exact receipts stay historical.** Existing receiver lanes remain evidence for their pinned producer/runtime heads; this candidate does not relabel old receipts.
-
-**Merged sibling growth becomes evidence, not automatic authority.** Current Form main has moved through its own verified/integrated lane, but Assembly does not absorb sibling implementation internals or infer new semantics without a receiver-relevant contract change.
-
-## Placement decision
-
-This candidate belongs in Assembly because the missing proof is in Assembly's claim that a generated portable kit remains complete after the supplied runtime turns it into a READY operation plan. MorphTile core already provides the authoritative `importKit`, `applyStructOp`, receiver world, lookup and hashing contracts and its current planner includes the declared kit matter. No new universal core representation/runtime primitive is required.
-
-The current Form integrated change is an internal grid-scale owner-state convergence and does not declare new public intent/recipe transport syntax; Surface and Capability remain independent producer lanes; Interface's latest work is receiver evidence rather than new producer authority. None is absorbed into this Assembly candidate.
+Assembly Machine owns this rule because Assembly creates the sourced warning wrapper. MorphTile core does not participate in that metadata path; no universal representation/runtime primitive is missing.
 
 ## HELD / open
 
-- Final exact-head push and PR-triggered CI must be green, and independent Verification must verify that same exact head before Creation Director integration.
-- MorphTile core #17 remains core-owned; Assembly does not duplicate or hide it.
-- Presentation z-order remains HOLD because no evidenced canonical MorphTile-core primitive/schema exists.
-- No automatic conflict winner or priority policy for incompatible candidate, word, definition or dependency variants.
-- Assembly does not invent, fetch or synthesize missing definitions, dependencies, `ui_panel` eligibility, target identity or parent/world context.
-- External/contextual dependencies not present in portable matter remain HOLD.
-- No arbitrary future Interface schema compatibility or future READY operation semantics without separate proof.
-- No visual-quality proof, automatic CANON, self-merge or merge authority.
+- Independent Verification must attack the final exact candidate head after fresh producer CI, including `""`, `0`, `false`, authored `null`, non-portable own-key `undefined`, true absence, warning-body preservation, full-provenance distinction and caller immutability.
+- Current Form `416326bcafec510dc16cd3712677461d45ca8b6c` needs a separate current-fleet receiver receipt before Assembly can claim it is covered.
+- MorphTile core #17 remains core-owned; Assembly does not duplicate it.
+- Presentation z-order remains HOLD without an evidenced canonical core primitive/schema.
+- No automatic conflict/dependency winner, invented missing definitions/context, visual-quality proof, automatic CANON, self-merge or merge authority.

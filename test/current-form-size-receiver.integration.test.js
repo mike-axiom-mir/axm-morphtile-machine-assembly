@@ -12,7 +12,7 @@ const formCommit = process.env.CURRENT_FORM_COMMIT;
 const coreCommit = process.env.CURRENT_MORPHTILE_COMMIT;
 const ready = Boolean(formPath && corePath);
 
-const EXPECTED_FORM = "b2c2202e746baf4d9dc23ec5e328ac9c63f2b695";
+const EXPECTED_FORM = "416326bcafec510dc16cd3712677461d45ca8b6c";
 const EXPECTED_CORE = "2bdf8eade1376055473b9cc1b11734b72a5566e5";
 
 function req(id, goal, intent) {

@@ -102,51 +102,45 @@ test("non-enumerable authored fields cannot hide outside the exact fleet evidenc
   ]);
 });
 
-test("current-fleet validation and consumption reject proxy-backed manifest evidence before property reads", () => {
-  let reads = 0;
-  const candidate = new Proxy({ ...fleet }, {
-    get(target, key, receiver) {
-      reads += 1;
-      if (key === "form") return "f".repeat(40);
-      return Reflect.get(target, key, receiver);
+test("accepted observation identity is consumed from validated data descriptors without re-entering property lookup", () => {
+  const target = observation();
+  const reads = [];
+  const observed = new Proxy(target, {
+    get(object, key, receiver) {
+      if (LANES.includes(key)) {
+        reads.push(key);
+        if (key === "interface") return "1".repeat(40);
+      }
+      return Reflect.get(object, key, receiver);
     }
   });
 
-  assert.deepEqual(validateFleet(candidate), [
-    "manifest: proxy-backed evidence is executable and is not accepted"
-  ]);
-  assert.throws(
-    () => outputLines(candidate),
-    /manifest: proxy-backed evidence is executable and is not accepted/
-  );
-  assert.throws(
-    () => assessFleetDrift(candidate, observation()),
-    /manifest: proxy-backed evidence is executable and is not accepted/
-  );
-  assert.equal(reads, 0, "proxy get traps must not execute during validation or consumption");
+  assert.deepEqual(validateObservedFleet(observed), []);
+  assert.deepEqual(reads, [], "validation must not execute proxy get traps for lane identity");
+
+  const result = assessFleetDrift(fleet, observed);
+  assert.deepEqual(reads, [], "drift assessment must consume the descriptor snapshot rather than ordinary lookup");
+  assert.deepEqual(result, {
+    status: "PASS",
+    drift: [],
+    holds: []
+  });
 });
 
-test("current-fleet drift assessment rejects proxy-backed observations without consuming trapped identity", () => {
-  let reads = 0;
-  const observed = new Proxy(observation(), {
-    get(target, key, receiver) {
-      reads += 1;
-      if (key === "interface") return "e".repeat(40);
-      return Reflect.get(target, key, receiver);
+test("accepted manifest identity is emitted from validated data descriptors without re-entering property lookup", () => {
+  const target = JSON.parse(JSON.stringify(fleet));
+  const reads = [];
+  const manifest = new Proxy(target, {
+    get(object, key, receiver) {
+      if (LANES.includes(key)) reads.push(key);
+      return Reflect.get(object, key, receiver);
     }
   });
 
-  assert.deepEqual(validateObservedFleet(observed), [
-    "observation: proxy-backed evidence is executable and is not accepted"
-  ]);
-  assert.deepEqual(assessFleetDrift(fleet, observed), {
-    status: "HOLD",
-    drift: [],
-    holds: [{
-      code: "HOLD_CURRENT_FLEET_OBSERVATION_INVALID",
-      errors: ["observation: proxy-backed evidence is executable and is not accepted"],
-      detail: "Observed fleet identity evidence is malformed or incomplete; Assembly will not compare, infer movement, or advance pins from it."
-    }]
-  });
-  assert.equal(reads, 0, "proxy observation get traps must not execute during validation or drift assessment");
+  assert.deepEqual(validateFleet(manifest), []);
+  assert.deepEqual(reads, [], "validation must not execute proxy get traps for manifest identity");
+
+  const lines = outputLines(manifest);
+  assert.deepEqual(reads, [], "pin emission must consume the descriptor snapshot rather than ordinary lookup");
+  assert.equal(lines, LANES.map((lane) => `${lane}=${fleet[lane]}`).join("\n") + "\n");
 });

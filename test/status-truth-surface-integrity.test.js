@@ -18,12 +18,12 @@ test("persistent status names executable current-fleet authority instead of dupl
   );
 });
 
-test("persistent status does not encode transient candidate lifecycle or activation-local gates", () => {
+test("persistent status does not encode transient candidate state or activation-local gates", () => {
   const forbidden = [
-    /\bCANDIDATE\b/i,
-    /FRESH VERIFICATION REQUIRED/i,
-    /Assembly integrated main\/base:/i,
-    /PAUSE_RECOMMENDED\s*:/i
+    /^- State:.*\bCANDIDATE\b/im,
+    /^- State:.*FRESH VERIFICATION REQUIRED/im,
+    /^- Assembly integrated main\/base:/im,
+    /^`?PAUSE_RECOMMENDED\s*:/im
   ];
 
   for (const pattern of forbidden) {

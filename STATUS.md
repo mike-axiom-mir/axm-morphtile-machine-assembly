@@ -1,8 +1,8 @@
 # Status
 
-- State: CURRENT-FLEET REFRESH + DRIFT-GUARD REPAIR CANDIDATE — FRESH VERIFICATION REQUIRED
+- State: DATA-ONLY CURRENT-FLEET EVIDENCE CANDIDATE — FRESH VERIFICATION REQUIRED
 - Test command: `npm test`
-- Assembly integrated main/base: `3d0ee8511e1440d09511f0c777f67c2b63f02d7b`
+- Assembly integrated main/base: `2b080e5789074eab5829b324c360936bb1878aa0`
 - MorphTile integrated receiver: `2bdf8eade1376055473b9cc1b11734b72a5566e5`
 - Envelope: provisional v0.1
 - Visual proof: none
@@ -13,11 +13,9 @@ Assembly combines compatible tile, facet, capability and reviewed Interface cand
 
 Complete-kit proof remains layered: portable kit identity, READY-plan coverage, ordered receiver application and receiver postcondition closure are separate evidence steps. Historical receiver receipts remain attached to the exact producer/runtime identities they actually exercised.
 
-Integrated main `3d0ee8511e1440d09511f0c777f67c2b63f02d7b` includes independently accepted Assembly #46 current-fleet receiver evidence and Assembly #43 exact upstream-warning source identity. Earlier moving-fleet manifests remain historical for the producer identities they actually named; they are not silently relabelled after sibling integration.
+Integrated main `2b080e5789074eab5829b324c360936bb1878aa0` includes independently accepted Assembly #47 current-fleet drift evidence, #46 current-fleet receiver evidence and #43 exact upstream-warning source identity. Assembly #47 is integrated; its independently rejected predecessor remains historical failure evidence and is not relabelled green.
 
-## Current candidate: exact-fleet refresh plus non-authoritative drift evidence
-
-Assembly PR #47 now refreshes the executable current-fleet receipt to the actually integrated identities:
+The integrated executable current-fleet receipt names:
 
 - Form `f2f549266e3a5c15eb87fd967261eb874a990d27`
 - Surface `4e4495182aa83e5dfba37722fc3756a70cfaafaa`
@@ -25,43 +23,53 @@ Assembly PR #47 now refreshes the executable current-fleet receipt to the actual
 - Interface `67894cab657168bd316af1f0c6b6463c7cc7bb3a`
 - MorphTile core `2bdf8eade1376055473b9cc1b11734b72a5566e5`
 
-The candidate converts repeated manual fleet-drift reasoning into bounded deterministic evidence machinery:
+## Current candidate: inert exact-fleet evidence
 
-- the pinned manifest rejects unsupported authored fields instead of silently ignoring future identity lanes;
-- required schema and lane identities must be own authored properties, so prototype-inherited identity cannot become PASS evidence;
-- an explicitly supplied observed-fleet snapshot has its own schema and must name the same exact five lanes with exact lowercase 40-character SHAs as own properties;
-- matching observed and pinned identities produce PASS;
-- producer/runtime movement produces `HOLD_CURRENT_FLEET_DRIFT` with both pinned and observed exact identities;
-- malformed, incomplete or inherited-only observations produce `HOLD_CURRENT_FLEET_OBSERVATION_INVALID` before comparison;
-- drift assessment never edits, advances or canonizes the pinned manifest.
+Assembly PR #48 tightens the current-fleet evidence grammar without changing tile/kit runtime semantics, sibling implementations, remote discovery or MorphTile core behavior.
 
-This is deliberately not remote discovery. Repository inspection still establishes which upstream identities are actually integrated and worth comparing. The machine only turns the repeated comparison and HOLD decision into deterministic capability.
+The #47 repair correctly required schema/lane identity to be authored as own properties, but validation still read lane values through ordinary JavaScript property access and enumerated unsupported fields with `Object.keys`. That left two evidence-integrity gaps:
 
-## Independent rejection preserved
+- an own or inherited accessor could execute while Assembly was trying to validate inert identity evidence;
+- a non-enumerable own field could exist outside the declared exact fleet grammar without being reported.
 
-Verification round 46 rejected predecessor #47 head `355a015bb24b96c2a3032e5a2930e80c63f213da`: producer replay passed, but an independent source-integrity attack proved prototype-inherited schema/lane identities could be accepted as if authored by the observed record. That failure remains valid historical evidence and is not relabelled green.
+The candidate converts that repeated source-integrity reasoning into deterministic machinery:
 
-The current repair adds own-property checks and producer regression coverage, and refreshes the receipt after Form #51 and Interface #42 were independently accepted and integrated. Because both semantics and exact fleet identities changed, the repaired final head requires fresh independent exact-head Verification before integration.
+- schema and lane identity are accepted only from own **data-property** descriptors;
+- accessor-backed identity is rejected without invoking its getter;
+- inherited identity is rejected without reading prototype code;
+- unsupported authored string fields are discovered through all own property names, including non-enumerable fields;
+- existing exact lowercase 40-character SHA validation, drift HOLDs, observation invalidity HOLDs, no-mutation behavior and no-auto-advance semantics remain unchanged.
+
+This still does not perform remote discovery. Repository inspection establishes which revisions are actually integrated; the machine validates and compares explicitly supplied evidence only.
+
+## Regression-first evidence
+
+Specification head `096bde95a943affd6311711764110fc4571285d8` deliberately failed both PR workflows: `test` run `35690407620` and `current-fleet` run `35690407715`. The generic test job failed specifically at `Run npm test`, proving the new getter/non-enumerable evidence boundary did not already exist.
+
+Implementation head `ae652e54a79ed89a7b2876efef00d76c90067d40` passed producer `test` run `35690477229` and producer `current-fleet` run `35690477221`; both exact `Run npm test` steps succeeded, and the current-fleet pin emitter also succeeded before exact sibling/core checkout.
+
+Any later documentation or candidate-head movement must earn fresh exact-head producer evidence; these receipts remain attached to `ae652e54...` only.
 
 ## Reusable rules
 
-**Historical green evidence belongs to the exact identities and semantic paths it exercised.** A newer producer identity requires a fresh receiver receipt; an exact SHA alone does not prove newly changed semantics.
+**Own-key authorship is necessary but not sufficient for inert evidence.** Reading an authored property through normal host-language lookup may execute code; exact identity evidence should be represented and inspected as data, not behavior.
 
-**A current-fleet receipt has one explicit identity authority.** Workflow checkouts, emitted commit evidence and receiver tests derive from the manifest rather than maintaining independent SHA tables.
+**Exact evidence grammars cover all authored own string fields, not only enumerable ones.** Hidden own fields cannot silently sit outside a contract that claims complete exact identity coverage.
 
-**Observation is evidence, not authority.** Detecting that an integrated sibling/core identity differs from the pinned receipt may justify a new Assembly candidate, but the comparison itself must not advance pins or silently canonize the observed revision.
+**Observation is evidence, not authority.** Detecting upstream movement may justify a new candidate, but validation/comparison never advances pins or canonizes the observed revision.
 
-**Exact evidence identity must be authored by the evidence record itself.** Prototype inheritance is not authorship and cannot satisfy schema or lane identity proof.
+**Historical green and red evidence belongs to the exact code identity and semantic path actually exercised.** Neither transfers automatically to a changed head.
 
 ## Placement
 
-This belongs in Assembly Machine because Assembly owns current-fleet receiver evidence and decides whether a complete assembled receipt is fresh for the identities it claims. MorphTile core already provides the representation/import/application/compile substrate; no missing universal representation/runtime primitive was exposed.
+This belongs in Assembly Machine because Assembly owns current-fleet receiver/evidence integrity. MorphTile core already provides the representation/import/application/compile substrate and no missing universal representation/runtime primitive was exposed.
 
 ## HELD / open
 
-- Fresh independent Verification must attack the final repaired Assembly #47 head before Creation Director integration. Producer CI is not acceptance authority.
+- Fresh independent Verification must attack the final exact Assembly #48 head before Creation Director integration. Producer CI is not acceptance authority.
+- Form #52 remains a separate Form-owned draft/unmerged candidate until independent exact-head Verification; Assembly does not pre-adopt it into the integrated fleet.
 - MorphTile core #17 remains core-owned; Assembly does not duplicate its lexical-repeat presentation repair.
 - Presentation z-order remains HOLD without an evidenced canonical core primitive/schema.
-- No automatic conflict/dependency winner, invented missing definitions/context, visual-quality proof, automatic CANON, self-merge or merge authority.
+- No automatic conflict/dependency winner, invented missing definitions/context, remote discovery, visual-quality proof, automatic CANON, self-merge or merge authority.
 
-`PAUSE_RECOMMENDED: NO` — current-fleet evidence remains active and the inherited-identity rejection exposed a bounded evidence-integrity repair without widening authority.
+`PAUSE_RECOMMENDED: NO` — this activation exposed a concrete evidence-integrity gap after #47 integration and converted it into bounded deterministic Assembly capability without widening authority.

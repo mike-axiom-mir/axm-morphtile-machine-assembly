@@ -3,6 +3,7 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const path = require("node:path");
+const fleet = require("../fixtures/current-fleet.json");
 const { run: assemble } = require("../src");
 const { materializeKit } = require("../src/kit");
 
@@ -20,13 +21,7 @@ const commits = {
   interface: process.env.CURRENT_INTERFACE_COMMIT,
   core: process.env.CURRENT_MORPHTILE_COMMIT
 };
-const expected = {
-  form: "b2c2202e746baf4d9dc23ec5e328ac9c63f2b695",
-  surface: "4e4495182aa83e5dfba37722fc3756a70cfaafaa",
-  capability: "edc07af182ee26ca1ceb64b5d5205591ec6aca9d",
-  interface: "ec92507b82d855de49ba024ecfdd32aada24b186",
-  core: "2bdf8eade1376055473b9cc1b11734b72a5566e5"
-};
+const expected = Object.fromEntries(Object.keys(commits).map((lane) => [lane, fleet[lane]]));
 const ready = Object.values(paths).every(Boolean);
 
 function req(id, goal, intent) {

@@ -1,0 +1,8 @@
+{
+  "schema": "axm.morphtile.assembly-current-fleet/v1",
+  "form": "cd72aba99ef8372290b36c17109aae14c308fecf",
+  "surface": "4e4495182aa83e5dfba37722fc3756a70cfaafaa",
+  "capability": "edc07af182ee26ca1ceb64b5d5205591ec6aca9d",
+  "interface": "1af4d358174af995459e5b4bded5d24c2d2c52a2",
+  "core": "2bdf8eade1376055473b9cc1b11734b72a5566e5"
+}

@@ -22,7 +22,7 @@ function req(id, goal, intent) {
     request_id: id,
     goal,
     intent,
-    provenance: { caller: "assembly-current-form-size-proof" }
+    provenance: { caller: "assembly-current-form-position-proof" }
   };
 }
 
@@ -37,59 +37,58 @@ function applyImported(MT, receiver, imported) {
   for (const operation of imported.ops || []) MT.applyStructOp(receiver, operation);
 }
 
-test("current integrated Form repeat size state survives complete Assembly receiver closure", { skip: !ready }, () => {
+test("current integrated Form repeat position state survives complete Assembly receiver closure", { skip: !ready }, () => {
   assert.equal(formCommit, EXPECTED_FORM,
-    "current receiver proof must bind the exact integrated Form identity that owns repeat-size generated state");
+    "current position proof must bind the exact integrated Form identity that owns repeat-position generated state");
   assert.equal(coreCommit, EXPECTED_CORE,
-    "current receiver proof must bind the exact integrated MorphTile receiver identity");
+    "current position proof must bind the exact integrated MorphTile receiver identity");
 
   const Form = require(path.resolve(formPath));
   const MT = require(path.resolve(corePath));
-  const id = "mt_current_size_repeat";
+  const id = "mt_current_position_repeat";
 
   const form = Form.run(req(
-    "current-form-size",
-    "Create current integrated repeat primitive size progression",
+    "current-form-position",
+    "Create current integrated repeat primitive position progression",
     {
       repeat: {
         count: 3,
-        step: [0, 1.5, 0],
-        size_step: [0.25, -0.1, 0],
-        part: { shape: "box", size: [1, 1, 0.5] }
+        step: [0.5, 0, -1],
+        part: { shape: "box", pos: [10, -2, 3], size: [1, 1, 0.5] }
       }
     }
   ));
   assert.equal(form.status, "CANDIDATE", JSON.stringify(form.holds));
 
   const authoredLeaf = recipeLeaf(form.candidate);
-  assert.deepEqual(authoredLeaf.size, [
-    ["+", 1, ["*", ["var", "i"], 0.25]],
-    ["+", 1, ["*", ["var", "i"], -0.1]],
-    0.5
-  ], "current Form must expose its integrated repeat-size state as explicit lexical-i recipe matter");
+  assert.deepEqual(authoredLeaf.pos, [
+    ["+", 10, ["*", ["var", "i"], 0.5]],
+    -2,
+    ["+", 3, ["*", ["var", "i"], -1]]
+  ], "current Form must expose its integrated repeat-position state as explicit lexical-i recipe matter");
 
   const assembled = assemble({
     envelope_version: "0.1",
-    request_id: "assembly-current-form-size",
-    goal: "Prove current integrated Form size state through complete Assembly transport",
-    intent: { id, name: "Current size repeat" },
+    request_id: "assembly-current-form-position",
+    goal: "Prove current integrated Form position state through complete Assembly transport",
+    intent: { id, name: "Current position repeat" },
     inputs: [form],
-    provenance: { caller: "assembly-current-form-size-proof" }
+    provenance: { caller: "assembly-current-form-position-proof" }
   });
   assert.equal(assembled.status, "CANDIDATE", JSON.stringify(assembled.holds));
   assert.deepEqual(recipeLeaf(assembled.candidate), authoredLeaf,
     "Assembly must preserve the exact current Form primitive repeat recipe leaf");
 
-  const portable = materializeKit(assembled, MT, { name: "Current Form size receiver kit" });
+  const portable = materializeKit(assembled, MT, { name: "Current Form position receiver kit" });
   assert.equal(portable.status, "CANDIDATE", JSON.stringify(portable.holds));
   for (const kind of ["KIT_IMPORT_PLAN_COVERAGE", "KIT_APPLY", "KIT_RECEIVER_CLOSURE"]) {
     assert.equal(portable.evidence.some((entry) => entry.kind === kind && entry.status === "PASS"), true,
-      `current Form size proof must earn ${kind}`);
+      `current Form position proof must earn ${kind}`);
   }
   assert.deepEqual(recipeLeaf(portable.kit.tile), authoredLeaf,
     "kit materialization must preserve the exact current Form primitive repeat recipe leaf");
 
-  const receiver = MT.createWorld("Current Form size receiver");
+  const receiver = MT.createWorld("Current Form position receiver");
   const imported = MT.importKit(receiver, JSON.parse(JSON.stringify(portable.kit)));
   assert.equal(imported.status, "READY", JSON.stringify(imported));
   applyImported(MT, receiver, imported);
@@ -104,5 +103,5 @@ test("current integrated Form repeat size state survives complete Assembly recei
   assert.equal(mesh.recipe_parts, 3,
     "current repeat count=3 must compile to three concrete primitive instances");
   assert.equal(mesh.P.every(Number.isFinite), true,
-    "receiver execution of the transported size progression must remain finite");
+    "receiver execution of the transported position progression must remain finite");
 });

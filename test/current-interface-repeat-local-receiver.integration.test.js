@@ -46,7 +46,7 @@ function applyImported(MT, receiver, imported) {
   for (const operation of imported.ops || []) MT.applyStructOp(receiver, operation);
 }
 
-test("current Interface repeat-local presentation survives Assembly kit transport without duplicating canonical action authority", { skip: !ready }, () => {
+test("current Interface repeat-local presentation survives Assembly kit transport without duplicating canonical read or action authority", { skip: !ready }, () => {
   assert.deepEqual(commits, {
     capability: fleet.capability,
     interface: fleet.interface,
@@ -65,7 +65,7 @@ test("current Interface repeat-local presentation survives Assembly kit transpor
   ));
   const interfaceOut = Interface.run(req(
     "repeat-local-interface",
-    "Render lexical repeat indices while every repeated action remains a view over one canonical increment signal",
+    "Render lexical repeat indices while every repeated readout and action remains a view over one canonical binding",
     {
       tile_path: id,
       title: "Repeat-local receiver proof",
@@ -76,6 +76,7 @@ test("current Interface repeat-local presentation survives Assembly kit transpor
         max: 4,
         children: [
           { kind: "repeat_text", source: "index", prefix: "slot " },
+          { kind: "readout", binding: "count", repeat_label: { source: "index", prefix: "readout " } },
           { kind: "action", binding: "increment", repeat_label: { source: "index", prefix: "increment " } }
         ]
       }],
@@ -99,11 +100,16 @@ test("current Interface repeat-local presentation survives Assembly kit transpor
 
   assert.equal(assembled.status, "CANDIDATE", JSON.stringify(assembled.holds));
   assert.deepEqual(assembled.candidate.view, interfaceOut.candidate.operation.view,
-    "Assembly must preserve repeat_text and repeat_label descriptors exactly rather than reinterpret them");
+    "Assembly must preserve repeat_text and readout/action repeat_label descriptors exactly rather than reinterpret them");
+  assert.equal(
+    Object.keys(assembled.candidate.facets.logic.data.vars).filter((name) => name === "count").length,
+    1,
+    "repeated readout presentation must still point at one canonical count variable"
+  );
   assert.equal(
     assembled.candidate.facets.connect.sockets.filter((socket) => socket.id === "increment" && socket.kind === "signal" && socket.dir === "in").length,
     1,
-    "repeated presentation must still point at one canonical increment input signal"
+    "repeated action presentation must still point at one canonical increment input signal"
   );
 
   const portable = materializeKit(assembled, MT, { name: "Repeat-local receiver kit" });
@@ -123,6 +129,11 @@ test("current Interface repeat-local presentation survives Assembly kit transpor
   assert.deepEqual(received.view, assembled.candidate.view,
     "verified import must retain the exact assembled lexical presentation descriptors");
   assert.equal(
+    Object.keys(received.facets.logic.data.vars).filter((name) => name === "count").length,
+    1,
+    "receiver matter must retain one canonical count read authority"
+  );
+  assert.equal(
     received.facets.connect.sockets.filter((socket) => socket.id === "increment" && socket.kind === "signal" && socket.dir === "in").length,
     1,
     "receiver matter must retain one canonical increment signal authority"
@@ -132,8 +143,11 @@ test("current Interface repeat-local presentation survives Assembly kit transpor
   const html = MT.vnodeToHTML(MT.compilePanel(receiver).root);
   for (let index = 0; index < 3; index += 1) {
     assert.match(html, new RegExp(`slot ${index}`));
+    assert.match(html, new RegExp(`readout ${index}`));
     assert.match(html, new RegExp(`increment ${index}`));
   }
+  assert.equal((html.match(/readout [0-2]/g) || []).length, 3,
+    "three repeated readout labels must resolve in lexical scope while reading one canonical count variable");
   assert.equal((html.match(new RegExp(`data-signal=\\"${id}:increment\\"`, "g")) || []).length, 3,
     "three repeated action views must bind back to the same canonical signal authority");
   assert.equal(MT.structHash(receiver), beforeRender,

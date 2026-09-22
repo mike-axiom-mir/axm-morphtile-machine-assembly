@@ -5,10 +5,17 @@ const SCHEMA = "axm.morphtile.assembly-current-fleet/v1";
 const OBSERVATION_SCHEMA = "axm.morphtile.assembly-current-fleet-observation/v1";
 const EXACT_SHA = /^[0-9a-f]{40}$/;
 const MANIFEST_FIELDS = new Set(["schema", ...LANES]);
-const hasOwn = (value, key) => Object.prototype.hasOwnProperty.call(value, key);
 
 function unsupportedFields(value) {
-  return Object.keys(value).filter((key) => !MANIFEST_FIELDS.has(key)).sort();
+  return Object.getOwnPropertyNames(value).filter((key) => !MANIFEST_FIELDS.has(key)).sort();
+}
+
+function ownDataValue(value, key) {
+  const descriptor = Object.getOwnPropertyDescriptor(value, key);
+  if (!descriptor || !Object.prototype.hasOwnProperty.call(descriptor, "value")) {
+    return { present: false, value: undefined };
+  }
+  return { present: true, value: descriptor.value };
 }
 
 function validateFleet(fleet) {
@@ -21,13 +28,14 @@ function validateFleet(fleet) {
   if (unexpected.length) {
     errors.push(`manifest: unsupported authored field(s): ${unexpected.join(", ")}`);
   }
-  if (!hasOwn(fleet, "schema") || fleet.schema !== SCHEMA) {
+  const schema = ownDataValue(fleet, "schema");
+  if (!schema.present || schema.value !== SCHEMA) {
     errors.push(`manifest: schema must equal ${SCHEMA}`);
   }
 
   for (const lane of LANES) {
-    const commit = fleet[lane];
-    if (!hasOwn(fleet, lane) || typeof commit !== "string" || !EXACT_SHA.test(commit)) {
+    const commit = ownDataValue(fleet, lane);
+    if (!commit.present || typeof commit.value !== "string" || !EXACT_SHA.test(commit.value)) {
       errors.push(`${lane}: expected an exact lowercase 40-character commit sha`);
     }
   }
@@ -45,13 +53,14 @@ function validateObservedFleet(observed) {
   if (unexpected.length) {
     errors.push(`observation: unsupported authored field(s): ${unexpected.join(", ")}`);
   }
-  if (!hasOwn(observed, "schema") || observed.schema !== OBSERVATION_SCHEMA) {
+  const schema = ownDataValue(observed, "schema");
+  if (!schema.present || schema.value !== OBSERVATION_SCHEMA) {
     errors.push(`observation: schema must equal ${OBSERVATION_SCHEMA}`);
   }
 
   for (const lane of LANES) {
-    const commit = observed[lane];
-    if (!hasOwn(observed, lane) || typeof commit !== "string" || !EXACT_SHA.test(commit)) {
+    const commit = ownDataValue(observed, lane);
+    if (!commit.present || typeof commit.value !== "string" || !EXACT_SHA.test(commit.value)) {
       errors.push(`${lane}: expected an exact lowercase 40-character observed commit sha`);
     }
   }

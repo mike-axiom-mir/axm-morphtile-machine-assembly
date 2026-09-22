@@ -49,7 +49,7 @@ Assembly #48 exact producer head `3818fccc5d22363d9b49a8965b33b1ff9b4eb902` earn
 
 Form #52 integrated to `dd5764efdcd75bb826dd908a4d2245ad04d0a57a` with post-merge test `35696125941 = SUCCESS`. Interface #43 integrated to `ddafc9e30144d12605c6e4198cd8d6c5764e6212` with post-merge test `35696175962 = SUCCESS`.
 
-Assembly #49's first receipt-only head passed producer `current-fleet` run `35696850902` and producer `test` run `35696850901`. Because this status repair creates a new exact head, those two runs remain historical evidence for the predecessor #49 head and do not transfer automatically. Exact final-head producer receipts belong on the PR/handoff after CI completes, rather than being embedded here and creating another moving commit identity.
+Assembly #49 has already earned producer `current-fleet` and `test` receipts on predecessor candidate heads. Any head movement makes those receipts historical for the new exact identity. Final-head producer receipts therefore belong on the PR/handoff after CI completes, rather than being embedded here and creating another moving commit identity.
 
 ## Reusable rules
 
@@ -69,7 +69,7 @@ The current-fleet manifest, drift/identity evidence and repository truth repair 
 
 ## HELD / open
 
-- Assembly #49 requires fresh producer CI and fresh independent exact-head Verification before Creation Director integration. Producer CI is not acceptance authority.
+- Assembly #49 requires fresh independent exact-head Verification before Creation Director integration. Producer CI for the exact candidate head is tracked on the PR/handoff and is not acceptance authority.
 - Form #53 remains a separate unintegrated Form-owned candidate; Assembly does not pre-adopt it into the current-fleet receipt.
 - Surface remains integrated at `4e4495182aa83e5dfba37722fc3756a70cfaafaa`; Capability remains integrated at `edc07af182ee26ca1ceb64b5d5205591ec6aca9d`.
 - MorphTile core #17 remains intentionally red and core-owned; Assembly does not duplicate its lexical-repeat presentation repair.

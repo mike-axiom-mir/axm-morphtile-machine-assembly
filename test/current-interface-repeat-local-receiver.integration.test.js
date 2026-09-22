@@ -102,7 +102,7 @@ test("current Interface repeat-local presentation survives Assembly kit transpor
   assert.deepEqual(assembled.candidate.view, interfaceOut.candidate.operation.view,
     "Assembly must preserve repeat_text and readout/action repeat_label descriptors exactly rather than reinterpret them");
   assert.equal(
-    assembled.candidate.facets.logic.vars.filter((variable) => variable.name === "count").length,
+    Object.keys(assembled.candidate.facets.logic.data.vars).filter((name) => name === "count").length,
     1,
     "repeated readout presentation must still point at one canonical count variable"
   );
@@ -129,7 +129,7 @@ test("current Interface repeat-local presentation survives Assembly kit transpor
   assert.deepEqual(received.view, assembled.candidate.view,
     "verified import must retain the exact assembled lexical presentation descriptors");
   assert.equal(
-    received.facets.logic.vars.filter((variable) => variable.name === "count").length,
+    Object.keys(received.facets.logic.data.vars).filter((name) => name === "count").length,
     1,
     "receiver matter must retain one canonical count read authority"
   );

@@ -1,6 +1,6 @@
 # Status
 
-- State: DATA-ONLY CURRENT-FLEET EVIDENCE CANDIDATE — FRESH VERIFICATION REQUIRED
+- State: DATA-DESCRIPTOR SNAPSHOT CURRENT-FLEET CANDIDATE — FRESH VERIFICATION REQUIRED
 - Test command: `npm test`
 - Assembly integrated main/base: `2b080e5789074eab5829b324c360936bb1878aa0`
 - MorphTile integrated receiver: `2bdf8eade1376055473b9cc1b11734b72a5566e5`
@@ -23,34 +23,38 @@ The integrated executable current-fleet receipt names:
 - Interface `67894cab657168bd316af1f0c6b6463c7cc7bb3a`
 - MorphTile core `2bdf8eade1376055473b9cc1b11734b72a5566e5`
 
-## Current candidate: inert exact-fleet evidence
+## Current candidate: one inert snapshot from validation through consumption
 
-Assembly PR #48 tightens the current-fleet evidence grammar without changing tile/kit runtime semantics, sibling implementations, remote discovery or MorphTile core behavior.
+Assembly PR #48 remains bounded to current-fleet evidence integrity. It does not change tile/kit runtime semantics, sibling implementations, remote discovery, pin authority or MorphTile core behavior.
 
-The #47 repair correctly required schema/lane identity to be authored as own properties, but validation still read lane values through ordinary JavaScript property access and enumerated unsupported fields with `Object.keys`. That left two evidence-integrity gaps:
+The first #48 head correctly required schema/lane identity to be authored as own data properties, rejected accessor-backed identity without invoking getters, and covered non-enumerable unsupported fields. Independent Verification round 48 then exposed a second boundary: `assessFleetDrift(...)` and `outputLines(...)` validated through descriptors but later consumed the caller record again through ordinary property lookup. A descriptor-valid Proxy could therefore present one exact data value to validation and a different value to later `get` lookup.
 
-- an own or inherited accessor could execute while Assembly was trying to validate inert identity evidence;
-- a non-enumerable own field could exist outside the declared exact fleet grammar without being reported.
+The repaired candidate converts validation and consumption into one deterministic evidence path:
 
-The candidate converts that repeated source-integrity reasoning into deterministic machinery:
+- one inspector reads the declared grammar through own data-property descriptors;
+- accepted schema/lane values are copied into a frozen null-prototype snapshot;
+- `validateFleet(...)` and `validateObservedFleet(...)` report the inspector's errors;
+- `assessFleetDrift(...)` compares only the validated manifest/observation snapshots;
+- `outputLines(...)` emits only from the validated manifest snapshot;
+- ordinary caller property lookup is not re-entered after descriptor validation;
+- inherited identity, accessor-backed identity and unsupported non-enumerable own fields retain their existing fail-closed behavior;
+- exact lowercase 40-character SHA validation, drift HOLDs, observation-invalid HOLDs, no-mutation behavior and no-auto-advance semantics remain unchanged.
 
-- schema and lane identity are accepted only from own **data-property** descriptors;
-- accessor-backed identity is rejected without invoking its getter;
-- inherited identity is rejected without reading prototype code;
-- unsupported authored string fields are discovered through all own property names, including non-enumerable fields;
-- existing exact lowercase 40-character SHA validation, drift HOLDs, observation invalidity HOLDs, no-mutation behavior and no-auto-advance semantics remain unchanged.
+This still does not claim that arbitrary JavaScript meta-object operations are non-executable. The exact repaired boundary is narrower: once own data-descriptor values have been accepted, Assembly does not switch back to ordinary property reads for comparison or pin emission.
 
-This still does not perform remote discovery. Repository inspection establishes which revisions are actually integrated; the machine validates and compares explicitly supplied evidence only.
+Repository inspection still establishes which revisions are actually integrated. The machine validates and compares explicitly supplied evidence only.
 
-## Regression-first evidence
+## Evidence trail
 
-Specification head `096bde95a943affd6311711764110fc4571285d8` deliberately failed both PR workflows: `test` run `35690407620` and `current-fleet` run `35690407715`. The generic test job failed specifically at `Run npm test`, proving the new getter/non-enumerable evidence boundary did not already exist.
+Specification head `096bde95a943affd6311711764110fc4571285d8` deliberately failed producer `test` run `35690407620` and producer `current-fleet` run `35690407715`, proving the first getter/non-enumerable boundary did not already exist.
 
-Implementation head `ae652e54a79ed89a7b2876efef00d76c90067d40` passed producer `test` run `35690477229` and producer `current-fleet` run `35690477221`; both exact `Run npm test` steps succeeded, and the current-fleet pin emitter also succeeded before exact sibling/core checkout.
+Predecessor #48 head `64e04f13fd98ff1a91b573b6ed17802fa35750d6` was producer-green but independently rejected by Verification round 48: Verification PR #79 exact verifier head `94ab092d8acedd169f7ee273a7138a19c164472e`, run/job `35691133425` / `106628168815 = FAILURE`. The independent attack showed ordinary post-validation property lookup could consume values different from the validated own data descriptors.
 
-Any later documentation or candidate-head movement must earn fresh exact-head producer evidence; these receipts remain attached to `ae652e54...` only.
+That rejection is preserved as exact-head failure evidence. The repaired head must earn fresh producer CI and fresh independent Verification; neither predecessor producer green nor predecessor verifier failure is relabelled as evidence for the repaired identity.
 
 ## Reusable rules
+
+**Validation and use are one evidence contract.** It is insufficient to validate inert identity through descriptors and then later consume the caller object through a different, executable lookup path. Accepted identity should be normalized once and downstream logic should consume that validated snapshot.
 
 **Own-key authorship is necessary but not sufficient for inert evidence.** Reading an authored property through normal host-language lookup may execute code; exact identity evidence should be represented and inspected as data, not behavior.
 
@@ -66,10 +70,11 @@ This belongs in Assembly Machine because Assembly owns current-fleet receiver/ev
 
 ## HELD / open
 
-- Fresh independent Verification must attack the final exact Assembly #48 head before Creation Director integration. Producer CI is not acceptance authority.
-- Form #52 remains a separate Form-owned draft/unmerged candidate until independent exact-head Verification; Assembly does not pre-adopt it into the integrated fleet.
+- Fresh producer CI and fresh independent Verification must attack the repaired exact Assembly #48 head before Creation Director integration. Producer CI is not acceptance authority.
+- Form #52 and Interface #43 have independent exact-head Verification PASS but remain separate draft/unmerged producer-owned candidates until Creation Director integration; Assembly does not pre-adopt them into the integrated fleet.
+- Surface remains integrated at `4e4495182aa83e5dfba37722fc3756a70cfaafaa`; Capability remains integrated at `edc07af182ee26ca1ceb64b5d5205591ec6aca9d`.
 - MorphTile core #17 remains core-owned; Assembly does not duplicate its lexical-repeat presentation repair.
 - Presentation z-order remains HOLD without an evidenced canonical core primitive/schema.
 - No automatic conflict/dependency winner, invented missing definitions/context, remote discovery, visual-quality proof, automatic CANON, self-merge or merge authority.
 
-`PAUSE_RECOMMENDED: NO` — this activation exposed a concrete evidence-integrity gap after #47 integration and converted it into bounded deterministic Assembly capability without widening authority.
+`PAUSE_RECOMMENDED: NO` — independent Verification exposed a concrete non-duplicate evidence-integrity gap, and the repaired candidate converts that reasoning into deterministic Assembly machinery without widening project authority.

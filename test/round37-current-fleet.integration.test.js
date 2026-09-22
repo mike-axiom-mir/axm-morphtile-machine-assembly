@@ -21,7 +21,7 @@ const commits = {
   core: process.env.CURRENT_MORPHTILE_COMMIT
 };
 const expected = {
-  form: "e551c53f642ceaa77c89dcd5b907c95fd59463dc",
+  form: "b2c2202e746baf4d9dc23ec5e328ac9c63f2b695",
   surface: "4e4495182aa83e5dfba37722fc3756a70cfaafaa",
   capability: "edc07af182ee26ca1ceb64b5d5205591ec6aca9d",
   interface: "ec92507b82d855de49ba024ecfdd32aada24b186",

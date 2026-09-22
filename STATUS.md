@@ -1,54 +1,43 @@
 # Status
 
-- State: ROUND 42 CURRENT-FLEET REFRESH CANDIDATE — FRESH VERIFICATION REQUIRED
+- State: INTEGRATED ASSEMBLY MAIN — CURRENT-FLEET RECEIPT IS EXECUTABLE EVIDENCE
 - Test command: `npm test`
-- Assembly integrated main/base: `cd0956217827ab263b76f4eab7f986f822bb6631`
-- MorphTile integrated receiver: `2bdf8eade1376055473b9cc1b11734b72a5566e5`
 - Envelope: provisional v0.1
 - Visual proof: none
 
 ## Integrated Assembly capability
 
-Assembly combines compatible Form, Surface, Capability and reviewed Interface candidates while preserving dependency closure, provenance, upstream warnings/HOLD evidence and canonical closure identity. Current-fleet evidence is validated as inert exact identity and consumed from the validated snapshot; observation remains evidence, never authority.
+Assembly combines compatible Form, Surface, Capability and reviewed Interface candidates while preserving dependency closure, words/definitions, source provenance, upstream warnings/HOLD evidence and canonical closure identity. Same-identity conflicts remain explicit HOLDs rather than silent winners.
 
-Assembly #50 integrated the exact fleet receipt that was current before Interface #45 moved. Independent Verification #82 accepted exact Assembly #50 head `be2569087358c503c11b4d213cd2845d41dc862b`, Verification integrated to `b65bb2726b97aa5802d04512e30ee07abd336699`, and Assembly #50 integrated to `cd0956217827ab263b76f4eab7f986f822bb6631`. Its post-merge `test` and `current-fleet` checks passed. That receipt remains historical exact evidence for the revisions it actually exercised.
+The exact current integrated producer/core identities are intentionally not duplicated in this file. `fixtures/current-fleet.json` is the executable Assembly receipt for those identities. `scripts/current-fleet-pins.js` validates that receipt as inert exact data, emits the pins consumed by the current-fleet workflow, and keeps observation separate from authority.
 
-## Current candidate: round 42 exact-fleet refresh
-
-Creation Director round 42 then independently accepted and integrated Interface #45. Current integrated producer identities are:
-
-- Form `ef6a09e4d662d960e015f61d7991c58d33f5c6d1`
-- Surface `4e4495182aa83e5dfba37722fc3756a70cfaafaa`
-- Capability `edc07af182ee26ca1ceb64b5d5205591ec6aca9d`
-- Interface `586ac55c2523be59739b75c446b0b95938ae5319`
-- MorphTile core `2bdf8eade1376055473b9cc1b11734b72a5566e5`
-
-This candidate refreshes `fixtures/current-fleet.json` to exactly those integrated identities. It does not change Assembly runtime/source/package behavior, candidate grammar, sibling implementation, remote discovery, pin authority, or MorphTile core behavior.
-
-Interface #45's composed-view interaction ownership proofs remain Interface-owned evidence knowledge. Assembly records the integrated identity only; it does not absorb the specialist implementation or evidence machinery.
+Historical receiver receipts remain attached to the exact producer/runtime identities and semantic paths they actually exercised. When a sibling or core main moves after independent integration, the old receipt remains valid historical evidence but stops being current-fleet truth; a new Assembly receipt must be intentionally reviewed and re-earned.
 
 ## Evidence boundary
 
-Assembly #50 exact-head producer and independent Verification receipts remain attached to predecessor head `be2569087358c503c11b4d213cd2845d41dc862b`; they do not transfer to this changed receipt. This exact candidate must earn fresh producer `test` + `current-fleet` evidence and fresh independent Verification before Creation Director integration.
+Exact-head CI and independent Verification receipts belong on the PR and durable handoff, where the exact code identity they exercised can be preserved without changing this persistent status merely to record a run id. Producer evidence is not merge authority.
+
+Persistent status describes integrated Assembly capability and durable authority boundaries. Candidate lifecycle, activation-local `PAUSE_RECOMMENDED` judgments, transient verification gates and exact commit identities belong in PRs/handoffs or the executable fleet receipt instead of being copied here and becoming stale immediately after integration.
 
 ## Reusable rules
 
-**Historical exact evidence does not become false when a sibling main moves, but it stops being current-fleet truth.** A new receipt is required for the new integrated identity.
+**Historical exact evidence does not become false when a sibling main moves, but it stops being current-fleet truth.** A changed integrated identity requires a fresh receipt for claims about the changed fleet.
 
-**Observation is evidence, not authority.** Assembly never silently advances pins or canonizes an observed sibling revision.
+**Observation is evidence, not authority.** Assembly does not auto-advance pins, choose a dependency/conflict winner, or canonize an observed sibling revision.
 
-**Composition changes visibility, not canonical ownership.** Interface interaction authority remains child-owned; Assembly records the integrated Interface identity without re-implementing that rule.
+**Validation and use are one evidence contract.** Accepted exact identity is normalized once and downstream comparison/emission consumes that validated snapshot rather than returning to a different host-language lookup path.
 
-**Validation and use are one evidence contract.** Accepted exact identity is normalized once and downstream comparison/emission consumes that validated snapshot.
+**Composition changes visibility, not canonical ownership.** Interface-owned interaction authority remains with the owning tile; Assembly records compatible integrated output without manufacturing a second authority.
 
-## HELD / open
+**Persistent truth must be merge-stable.** Exact heads, CI receipts, candidate gates and activation-local pause decisions are valuable evidence, but embedding them in a file that is merged as-is repeatedly creates false current-state stories. Keep those exact facts on the PR/handoff and keep this status limited to durable integrated capability and boundaries.
 
-- This round-42 refresh requires fresh exact-head producer CI and independent Verification before integration.
-- Verification issue #69 remains Verification-owned trigger-hygiene work; Assembly does not repair historical workflow fanout.
-- MorphTile core #17 remains intentionally red and core-owned; Assembly does not duplicate its repeat lexical presentation-scope repair.
-- Presentation z-order remains HOLD without an evidenced canonical core primitive/schema.
-- No automatic CANON, merge authority, remote discovery, or visual-quality proof is claimed.
+## HELD / open boundaries
+
+- Unintegrated sibling or core candidates are excluded from the current-fleet receipt until their owning lane has independent evidence and the Creation Director integrates them.
+- A producer identity change alone does not prove changed semantics; Assembly audits whether an existing exact-pinned receiver proof traverses the changed path before adding another receipt.
+- Presentation z-order/layering remains HOLD unless an evidenced canonical MorphTile representation/runtime primitive exists; Assembly does not invent a private substrate workaround.
+- Core-owned representation/runtime gaps remain core-owned; Assembly may open a bounded core candidate only when ordinary MorphTile matter cannot represent or run the required universal concept.
+- No automatic CANON, merge authority, remote discovery, visual-quality proof, invented missing definitions/context, or silent dependency/conflict winner is claimed.
 
 `CANON = NOT_CLAIMED`
 `VISUAL_QUALITY = NOT_ASSESSED`
-`PAUSE_RECOMMENDED: NO`

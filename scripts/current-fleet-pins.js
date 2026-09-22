@@ -1,5 +1,7 @@
 "use strict";
 
+const { types: { isProxy } } = require("node:util");
+
 const LANES = Object.freeze(["form", "surface", "capability", "interface", "core"]);
 const SCHEMA = "axm.morphtile.assembly-current-fleet/v1";
 const OBSERVATION_SCHEMA = "axm.morphtile.assembly-current-fleet-observation/v1";
@@ -18,76 +20,100 @@ function ownDataValue(value, key) {
   return { present: true, value: descriptor.value };
 }
 
-function validateFleet(fleet) {
-  if (!fleet || typeof fleet !== "object" || Array.isArray(fleet)) {
-    return ["manifest: expected a plain object-like record"];
+function inspectFleetRecord(value, {
+  label,
+  schema,
+  commitLabel
+}) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return {
+      errors: [`${label}: expected a plain object-like record`],
+      snapshot: null
+    };
+  }
+
+  if (isProxy(value)) {
+    return {
+      errors: [`${label}: proxy-backed evidence is executable and is not accepted`],
+      snapshot: null
+    };
   }
 
   const errors = [];
-  const unexpected = unsupportedFields(fleet);
+  const unexpected = unsupportedFields(value);
   if (unexpected.length) {
-    errors.push(`manifest: unsupported authored field(s): ${unexpected.join(", ")}`);
+    errors.push(`${label}: unsupported authored field(s): ${unexpected.join(", ")}`);
   }
-  const schema = ownDataValue(fleet, "schema");
-  if (!schema.present || schema.value !== SCHEMA) {
-    errors.push(`manifest: schema must equal ${SCHEMA}`);
+
+  const snapshot = Object.create(null);
+  const authoredSchema = ownDataValue(value, "schema");
+  if (!authoredSchema.present || authoredSchema.value !== schema) {
+    errors.push(`${label}: schema must equal ${schema}`);
+  } else {
+    snapshot.schema = authoredSchema.value;
   }
 
   for (const lane of LANES) {
-    const commit = ownDataValue(fleet, lane);
+    const commit = ownDataValue(value, lane);
     if (!commit.present || typeof commit.value !== "string" || !EXACT_SHA.test(commit.value)) {
-      errors.push(`${lane}: expected an exact lowercase 40-character commit sha`);
+      errors.push(`${lane}: expected an exact lowercase 40-character${commitLabel} commit sha`);
+    } else {
+      snapshot[lane] = commit.value;
     }
   }
 
-  return errors;
+  return {
+    errors,
+    snapshot: errors.length ? null : Object.freeze(snapshot)
+  };
+}
+
+function inspectManifest(fleet) {
+  return inspectFleetRecord(fleet, {
+    label: "manifest",
+    schema: SCHEMA,
+    commitLabel: ""
+  });
+}
+
+function inspectObservation(observed) {
+  return inspectFleetRecord(observed, {
+    label: "observation",
+    schema: OBSERVATION_SCHEMA,
+    commitLabel: " observed"
+  });
+}
+
+function validateFleet(fleet) {
+  return inspectManifest(fleet).errors;
 }
 
 function validateObservedFleet(observed) {
-  if (!observed || typeof observed !== "object" || Array.isArray(observed)) {
-    return ["observation: expected a plain object-like record"];
-  }
-
-  const errors = [];
-  const unexpected = unsupportedFields(observed);
-  if (unexpected.length) {
-    errors.push(`observation: unsupported authored field(s): ${unexpected.join(", ")}`);
-  }
-  const schema = ownDataValue(observed, "schema");
-  if (!schema.present || schema.value !== OBSERVATION_SCHEMA) {
-    errors.push(`observation: schema must equal ${OBSERVATION_SCHEMA}`);
-  }
-
-  for (const lane of LANES) {
-    const commit = ownDataValue(observed, lane);
-    if (!commit.present || typeof commit.value !== "string" || !EXACT_SHA.test(commit.value)) {
-      errors.push(`${lane}: expected an exact lowercase 40-character observed commit sha`);
-    }
-  }
-
-  return errors;
+  return inspectObservation(observed).errors;
 }
 
 function assessFleetDrift(fleet, observed) {
-  const manifestErrors = validateFleet(fleet);
-  if (manifestErrors.length) {
-    throw new Error(`Invalid current-fleet manifest:\n- ${manifestErrors.join("\n- ")}`);
+  const manifest = inspectManifest(fleet);
+  if (manifest.errors.length) {
+    throw new Error(`Invalid current-fleet manifest:\n- ${manifest.errors.join("\n- ")}`);
   }
 
-  const observationErrors = validateObservedFleet(observed);
-  if (observationErrors.length) {
+  const observation = inspectObservation(observed);
+  if (observation.errors.length) {
     return {
       status: "HOLD",
       drift: [],
       holds: [{
         code: "HOLD_CURRENT_FLEET_OBSERVATION_INVALID",
-        errors: observationErrors,
+        errors: observation.errors,
         detail: "Observed fleet identity evidence is malformed or incomplete; Assembly will not compare, infer movement, or advance pins from it."
       }]
     };
   }
 
-  const drift = LANES.filter((lane) => fleet[lane] !== observed[lane]);
+  const pinned = manifest.snapshot;
+  const current = observation.snapshot;
+  const drift = LANES.filter((lane) => pinned[lane] !== current[lane]);
   if (!drift.length) {
     return { status: "PASS", drift: [], holds: [] };
   }
@@ -98,20 +124,20 @@ function assessFleetDrift(fleet, observed) {
     holds: drift.map((lane) => ({
       code: "HOLD_CURRENT_FLEET_DRIFT",
       lane,
-      pinned_commit: fleet[lane],
-      observed_commit: observed[lane],
+      pinned_commit: pinned[lane],
+      observed_commit: current[lane],
       detail: "Observed integrated identity differs from the pinned Assembly current-fleet receipt; inspection may justify a new candidate, but this comparison does not advance authority or rewrite the manifest."
     }))
   };
 }
 
 function outputLines(fleet) {
-  const errors = validateFleet(fleet);
-  if (errors.length) {
-    throw new Error(`Invalid current-fleet manifest:\n- ${errors.join("\n- ")}`);
+  const manifest = inspectManifest(fleet);
+  if (manifest.errors.length) {
+    throw new Error(`Invalid current-fleet manifest:\n- ${manifest.errors.join("\n- ")}`);
   }
 
-  return `${LANES.map((lane) => `${lane}=${fleet[lane]}`).join("\n")}\n`;
+  return `${LANES.map((lane) => `${lane}=${manifest.snapshot[lane]}`).join("\n")}\n`;
 }
 
 if (require.main === module) {
